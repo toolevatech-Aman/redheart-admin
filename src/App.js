@@ -1,24 +1,31 @@
-import logo from './logo.svg';
-import './App.css';
 
+import './App.css';
+import { BrowserRouter, useNavigate } from "react-router-dom";
+import AxiosInterceptorProvider from './interceptors/axiosInterceptorProvider';
+import Router from './router';
+import ScrollToTop from "./ScrollToTop";
+
+function AppContent() {
+
+  return (
+   <ScrollToTop>
+   
+        <Router />
+      
+    </ScrollToTop>
+  );
+}
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+
+      <BrowserRouter>
+        <AxiosInterceptorProvider>
+
+          <AppContent />
+   
+        </AxiosInterceptorProvider>
+      </BrowserRouter>
+
   );
 }
 
