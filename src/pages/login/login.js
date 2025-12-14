@@ -53,8 +53,7 @@ export default function LoginWithOTP() {
       
       console.log("Verified:", res);
 
-      alert("OTP Verified!");
-      navigate("/")
+      navigate("/home")
       
 
     } catch (err) {
