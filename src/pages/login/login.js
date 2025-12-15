@@ -54,7 +54,7 @@ export default function LoginWithOTP() {
       console.log("Verified:", res);
 
       navigate("/home")
-      
+      window.location.reload();
 
     } catch (err) {
       console.error("Verify Error:", err);
