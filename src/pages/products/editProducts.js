@@ -30,6 +30,7 @@ const EditProduct = () => {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded-lg">
+        <h1 className="">This is only to edit Product</h1>
       <h2 className="text-2xl font-semibold mb-4 text-gray-800">Upload Product CSV</h2>
       <form
         onSubmit={handleSubmit}
