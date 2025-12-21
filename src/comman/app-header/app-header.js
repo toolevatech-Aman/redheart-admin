@@ -67,6 +67,13 @@ const Header = () => {
                             >
                                 Add Products
                             </button>
+                              <button
+                                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === "products" ? "text-red-600" : "text-gray-700"
+                                    }`}
+                                onClick={() => navigate("/editProduct")}
+                            >
+                                Edit Products
+                            </button>
                             <button
                                 className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === "products" ? "text-red-600" : "text-gray-700"
                                     }`}
@@ -158,10 +165,10 @@ const Header = () => {
                                     <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md" onClick={() => navigate("/addProduct")}>
                                         Add Product
                                     </button>
-                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md">
+                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md"  onClick={() => navigate("/editProduct")}>
                                         Edit Product
                                     </button>
-                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md">
+                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md"     onClick={() => navigate("/deleteProduct")}>
                                         Delete Product
                                     </button>
                                 </div>
@@ -169,7 +176,7 @@ const Header = () => {
                         </div>
 
                         {/* Orders Tab */}
-                        <button className="w-full text-left px-3 py-2 rounded-md text-gray-700 font-medium hover:bg-red-100">
+                        <button className="w-full text-left px-3 py-2 rounded-md text-gray-700 font-medium hover:bg-red-100" >
                             Orders
                         </button>
 

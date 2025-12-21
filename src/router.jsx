@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import AppLayout from "./comman/app-layout/app-layout";;
+import AppLayout from "./comman/app-layout/app-layout";import EditProduct from "./pages/products/editProducts";
+;
 // import logoImage from "./assets/yobhaLogo.png"
 // Lazy load pages
 const Home = lazy(() => import("./pages/home/home"));
@@ -19,7 +20,8 @@ const Router = () => {
     { path: "/home", element: <Home /> ,protected: true},
     {path:"/addProduct", element: <AddProduct /> ,protected: true},
     {path:"/deleteProduct",element:<DeleteProducts/>, protected:true},
-    {path:"/imageUpload", element:<ImageUpload/>, protected:true}
+    {path:"/imageUpload", element:<ImageUpload/>, protected:true},
+    {path:'/editProduct',element:<EditProduct/>, protected:true}
     
   ];
   const authToken = localStorage.getItem("authToken");
