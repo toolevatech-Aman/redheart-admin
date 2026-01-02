@@ -74,7 +74,13 @@ const Header = () => {
                             >
                                 Edit Products
                             </button>
-                           
+                            <button
+                                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === "products" ? "text-red-600" : "text-gray-700"
+                                    }`}
+                                onClick={() => navigate("/addonUpload")}
+                            >
+                                Add On Upload
+                            </button>
                             <button
                                 className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === "products" ? "text-red-600" : "text-gray-700"
                                     }`}

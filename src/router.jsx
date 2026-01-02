@@ -10,7 +10,7 @@ const AddProduct = lazy(() => import("./pages/products/addProducts"));
 const DeleteProducts = lazy(() => import("./pages/products/deleteProducts"));
 // const ImageUpload = lazy(() => import("./pages/image-upload/image-upload"));
 const ImageUpload = lazy(()=>import("./pages/image-upload/image-upload"))
-
+const AddonUpload = lazy(()=>import("./pages/products/addonUpload"))
 const logoImage ="../../assets/redHeartLogoo.png"
 const Router = () => {
   const routes = [
@@ -21,7 +21,8 @@ const Router = () => {
     {path:"/addProduct", element: <AddProduct /> ,protected: true},
     {path:"/deleteProduct",element:<DeleteProducts/>, protected:true},
     {path:"/imageUpload", element:<ImageUpload/>, protected:true},
-    {path:'/editProduct',element:<EditProduct/>, protected:true}
+    {path:'/editProduct',element:<EditProduct/>, protected:true},
+    {path:"/addonUpload", element:<AddonUpload/>, protected:true},
     
   ];
   const authToken = localStorage.getItem("authToken");
