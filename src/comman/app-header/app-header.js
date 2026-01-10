@@ -53,7 +53,7 @@ const Header = () => {
                             >
                                 Home
                             </button>
-                               <button
+                            <button
                                 className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === "products" ? "text-red-600" : "text-gray-700"
                                     }`}
                                 onClick={() => navigate("/imageUpload")}
@@ -67,7 +67,7 @@ const Header = () => {
                             >
                                 Add Products
                             </button>
-                              <button
+                            <button
                                 className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === "products" ? "text-red-600" : "text-gray-700"
                                     }`}
                                 onClick={() => navigate("/editProduct")}
@@ -88,7 +88,13 @@ const Header = () => {
                             >
                                 Delete Products
                             </button>
-
+                            <button
+                                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === "products" ? "text-red-600" : "text-gray-700"
+                                    }`}
+                                onClick={() => navigate("/pageContent")}
+                            >
+                                Page Content
+                            </button>
                         </div>
 
                         {/* Orders Tab */}
@@ -165,11 +171,14 @@ const Header = () => {
                                     <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md" onClick={() => navigate("/addProduct")}>
                                         Add Product
                                     </button>
-                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md"  onClick={() => navigate("/editProduct")}>
+                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md" onClick={() => navigate("/editProduct")}>
                                         Edit Product
                                     </button>
-                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md"     onClick={() => navigate("/deleteProduct")}>
+                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md" onClick={() => navigate("/deleteProduct")}>
                                         Delete Product
+                                    </button>
+                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md" onClick={() => navigate("/pageContent")}>
+                                        Page Content
                                     </button>
                                 </div>
                             )}
