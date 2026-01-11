@@ -101,7 +101,7 @@ const Header = () => {
                         <button
                             className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === "orders" ? "text-red-600" : "text-gray-700"
                                 }`}
-                            onClick={() => setActiveTab("orders")}
+                          onClick={() => navigate("/orders")}
                         >
                             Orders
                         </button>
@@ -185,7 +185,7 @@ const Header = () => {
                         </div>
 
                         {/* Orders Tab */}
-                        <button className="w-full text-left px-3 py-2 rounded-md text-gray-700 font-medium hover:bg-red-100" >
+                        <button className="w-full text-left px-3 py-2 rounded-md text-gray-700 font-medium hover:bg-red-100" onClick={() => navigate("/orders")}>
                             Orders
                         </button>
 
