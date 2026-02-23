@@ -13,6 +13,7 @@ const DeleteProducts = lazy(() => import("./pages/products/deleteProducts"));
 // const ImageUpload = lazy(() => import("./pages/image-upload/image-upload"));
 const ImageUpload = lazy(()=>import("./pages/image-upload/image-upload"))
 const AddonUpload = lazy(()=>import("./pages/products/addonUpload"))
+const QuestionsPage = lazy(() => import("./pages/questions/QuestionsPage"))
 const logoImage ="../../assets/redHeartLogoo.png"
 const Router = () => {
   const routes = [
@@ -26,6 +27,7 @@ const Router = () => {
     {path:'/editProduct',element:<EditProduct/>, protected:true},
     {path:"/addonUpload", element:<AddonUpload/>, protected:true},
     {path:"/pageContent",element:<AdminPageContentEditor/>, protected:true},
+    {path:"/questions", element: <QuestionsPage />, protected: true},
     {path:"orders", element: <OrderPage />, protected: true},
     
   ];

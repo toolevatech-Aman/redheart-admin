@@ -95,6 +95,13 @@ const Header = () => {
                             >
                                 Page Content
                             </button>
+                            <button
+                                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === "products" ? "text-red-600" : "text-gray-700"
+                                    }`}
+                                onClick={() => navigate("/questions")}
+                            >
+                                Questions
+                            </button>
                         </div>
 
                         {/* Orders Tab */}
@@ -179,6 +186,9 @@ const Header = () => {
                                     </button>
                                     <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md" onClick={() => navigate("/pageContent")}>
                                         Page Content
+                                    </button>
+                                    <button className="block w-full text-left px-3 py-1 text-gray-600 hover:bg-red-100 rounded-md" onClick={() => navigate("/questions")}>
+                                        Questions
                                     </button>
                                 </div>
                             )}
