@@ -1,0 +1,34 @@
+{
+  "files": {
+    "main.css": "/static/css/main.62b1b136.css",
+    "main.js": "/static/js/main.bb38cf60.js",
+    "static/js/184.9b5a9cb6.chunk.js": "/static/js/184.9b5a9cb6.chunk.js",
+    "static/js/133.5120f797.chunk.js": "/static/js/133.5120f797.chunk.js",
+    "static/js/575.3b23ae3d.chunk.js": "/static/js/575.3b23ae3d.chunk.js",
+    "static/js/985.59adc6ee.chunk.js": "/static/js/985.59adc6ee.chunk.js",
+    "static/js/355.40c808e1.chunk.js": "/static/js/355.40c808e1.chunk.js",
+    "static/js/991.5259bfe6.chunk.js": "/static/js/991.5259bfe6.chunk.js",
+    "static/js/935.ec44133c.chunk.js": "/static/js/935.ec44133c.chunk.js",
+    "static/js/453.d666df0c.chunk.js": "/static/js/453.d666df0c.chunk.js",
+    "static/js/897.bce383bd.chunk.js": "/static/js/897.bce383bd.chunk.js",
+    "static/js/565.faf23ec4.chunk.js": "/static/js/565.faf23ec4.chunk.js",
+    "static/media/redHeartLogoo.png": "/static/media/redHeartLogoo.dfc7a057149c6379283d.png",
+    "index.html": "/index.html",
+    "main.62b1b136.css.map": "/static/css/main.62b1b136.css.map",
+    "main.bb38cf60.js.map": "/static/js/main.bb38cf60.js.map",
+    "184.9b5a9cb6.chunk.js.map": "/static/js/184.9b5a9cb6.chunk.js.map",
+    "133.5120f797.chunk.js.map": "/static/js/133.5120f797.chunk.js.map",
+    "575.3b23ae3d.chunk.js.map": "/static/js/575.3b23ae3d.chunk.js.map",
+    "985.59adc6ee.chunk.js.map": "/static/js/985.59adc6ee.chunk.js.map",
+    "355.40c808e1.chunk.js.map": "/static/js/355.40c808e1.chunk.js.map",
+    "991.5259bfe6.chunk.js.map": "/static/js/991.5259bfe6.chunk.js.map",
+    "935.ec44133c.chunk.js.map": "/static/js/935.ec44133c.chunk.js.map",
+    "453.d666df0c.chunk.js.map": "/static/js/453.d666df0c.chunk.js.map",
+    "897.bce383bd.chunk.js.map": "/static/js/897.bce383bd.chunk.js.map",
+    "565.faf23ec4.chunk.js.map": "/static/js/565.faf23ec4.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.62b1b136.css",
+    "static/js/main.bb38cf60.js"
+  ]
+}
