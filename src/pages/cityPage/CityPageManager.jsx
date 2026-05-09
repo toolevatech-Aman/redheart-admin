@@ -5,6 +5,7 @@ import {
   addCitiesBulk,
   updateCity,
   deleteCity,
+  regenerateCities,
 } from "../../service/cityPageService";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -62,6 +63,10 @@ const CityPageManager = () => {
   const [bulkResult,     setBulkResult]     = useState(null);
   const [bulkLoading,    setBulkLoading]    = useState(false);
   const [uploadOpen,     setUploadOpen]     = useState(false);
+
+  // Regenerate state
+  const [regenLoading,   setRegenLoading]   = useState(false);
+  const [regenResult,    setRegenResult]    = useState(null);
 
   // Modal state
   const [editingCity,    setEditingCity]    = useState(null);
@@ -133,6 +138,22 @@ const CityPageManager = () => {
     }
   };
 
+  // ── Regenerate all cities for current category ─────────────────────────────
+  const handleRegenerate = async () => {
+    if (!window.confirm(`Re-generate H1, Meta Title, Meta Description, Meta Keywords & Breadcrumb for ALL ${activeCategory} cities?\n\nFooter content & FAQs will NOT be changed.`)) return;
+    setRegenLoading(true);
+    setRegenResult(null);
+    try {
+      const res = await regenerateCities(activeCategory);
+      setRegenResult(`✅ ${res.data.message}`);
+      await loadCities(activeCategory);
+    } catch (err) {
+      setRegenResult(`❌ ${err?.response?.data?.message || "Regeneration failed"}`);
+    } finally {
+      setRegenLoading(false);
+    }
+  };
+
   // ── Save from modal ────────────────────────────────────────────────────────
   const handleSave = async (id, formData) => {
     try {
@@ -149,9 +170,23 @@ const CityPageManager = () => {
     <div className="min-h-screen bg-gray-50 p-6">
 
       {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">City Page SEO</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage SEO meta tags, footer content, and FAQ schema for city landing pages.</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">City Page SEO</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage SEO meta tags, footer content, and FAQ schema for city landing pages.</p>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleRegenerate}
+            disabled={regenLoading}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 shadow-sm disabled:opacity-60"
+          >
+            {regenLoading ? "Regenerating…" : "🔄 Regenerate SEO"}
+          </button>
+          {regenResult && (
+            <p className="text-xs text-gray-600">{regenResult}</p>
+          )}
+        </div>
       </div>
 
       {/* Category tabs */}
@@ -246,29 +281,40 @@ const CityPageManager = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Page</th>
-                    <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-56">URL</th>
-                    <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Meta Title</th>
-                    <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Meta Description</th>
-                    <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Actions</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-28">City</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-44">URL</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-40">H1 Tag</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Meta Title</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-48">Meta Description</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-28">Keywords</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {cities.map((city) => (
                     <tr key={city._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3 font-semibold text-gray-800 whitespace-nowrap">
+                      <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">
                         {city.cityName}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3">
                         <span className="font-mono text-xs text-gray-500 break-all">{city.url}</span>
                       </td>
-                      <td className="px-5 py-3 text-gray-600 max-w-xs">
-                        <span title={city.metaTitle}>{truncate(city.metaTitle, 60)}</span>
+                      <td className="px-4 py-3 text-gray-700 text-sm">
+                        <span title={city.h1}>{truncate(city.h1, 35)}</span>
                       </td>
-                      <td className="px-5 py-3 text-gray-500 max-w-sm">
-                        <span title={city.metaDescription}>{truncate(city.metaDescription, 80)}</span>
+                      <td className="px-4 py-3 text-gray-600 text-sm">
+                        <span title={city.metaTitle}>{truncate(city.metaTitle, 55)}</span>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3 text-gray-500 text-sm">
+                        <span title={city.metaDescription}>{truncate(city.metaDescription, 60)}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {city.metaKeyword
+                          ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ Set</span>
+                          : <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600 font-medium">Empty</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setEditingCity(city)}

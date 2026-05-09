@@ -39,3 +39,12 @@ export const updateCity = (id, data) =>
  */
 export const deleteCity = (id) =>
   Delete(`/city/cities/${id}`);
+
+/**
+ * Regenerate SEO fields (metaTitle, metaDescription, h1, metaKeyword, breadcrumb, canonicalUrl)
+ * for ALL existing cities of a given category using the latest templates.
+ * footerContent and faqs are preserved.
+ * @param {string} category  "Flowers" | "Cakes" | "Plants"
+ */
+export const regenerateCities = (category) =>
+  Post(`/city/cities/regenerate/${category}`, {});

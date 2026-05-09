@@ -44,6 +44,7 @@ const CityModal = ({ city, onClose, onSave }) => {
     metaKeyword:     "",
     footerContent:   "",
     faqs:            [],
+    breadcrumb:      [],
   });
 
   // Initialise form from city prop
@@ -60,6 +61,7 @@ const CityModal = ({ city, onClose, onSave }) => {
         faqs:            city.faqs && city.faqs.length > 0
                            ? city.faqs.map((f) => ({ question: f.question || "", answer: f.answer || "" }))
                            : [],
+        breadcrumb:      city.breadcrumb      || [],
       });
     }
   }, [city]);
@@ -218,6 +220,33 @@ const CityModal = ({ city, onClose, onSave }) => {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400"
                   placeholder="keyword1, keyword2, ..."
                 />
+              </div>
+
+              {/* Breadcrumb — read-only display */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-2">Breadcrumb Path</label>
+                {form.breadcrumb && form.breadcrumb.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                    {form.breadcrumb.map((crumb, i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        <a
+                          href={`https://www.redheart.in${crumb.url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          {crumb.label}
+                        </a>
+                        {i < form.breadcrumb.length - 1 && (
+                          <span className="text-gray-400 text-xs">›</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No breadcrumb data — click Regenerate SEO to auto-fill.</p>
+                )}
+                <p className="text-xs text-gray-400 mt-1">Auto-generated. Use "🔄 Regenerate SEO" button to update.</p>
               </div>
             </div>
           )}
