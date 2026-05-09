@@ -1,6 +1,8 @@
 import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./comman/app-layout/app-layout";
+import AdminPageContentEditor from "./pages/pageContent/pageContent";
+import OrderPage from "./pages/orders/order";
 
 // ── Existing pages ────────────────────────────────────────────────────────────
 const Home            = lazy(() => import("./pages/home/home"));
@@ -10,8 +12,6 @@ const EditProduct     = lazy(() => import("./pages/products/editProducts"));
 const DeleteProducts  = lazy(() => import("./pages/products/deleteProducts"));
 const ImageUpload     = lazy(() => import("./pages/image-upload/image-upload"));
 const AddonUpload     = lazy(() => import("./pages/products/addonUpload"));
-import AdminPageContentEditor from "./pages/pageContent/pageContent";
-import OrderPage from "./pages/orders/order";
 const QuestionsPage   = lazy(() => import("./pages/questions/QuestionsPage"));
 
 // ── Bulk Upload ───────────────────────────────────────────────────────────────
