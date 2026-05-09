@@ -78,12 +78,18 @@ export const downloadTemplate = async (category) => {
   const token = localStorage.getItem("authToken");
   const url   = `https://backend.redheart.in/api/bulk/template/${category}`;
   const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!response.ok) throw new Error("Template not found");
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Template download failed (${response.status})`);
+  }
   const blob = await response.blob();
   const link = document.createElement("a");
-  link.href  = URL.createObjectURL(blob);
+  link.href     = URL.createObjectURL(blob);
   link.download = `${category.toLowerCase()}_upload_template.xlsx`;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 };
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
