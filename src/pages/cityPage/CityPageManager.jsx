@@ -287,6 +287,8 @@ const CityPageManager = () => {
                     <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Meta Title</th>
                     <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-48">Meta Description</th>
                     <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-28">Keywords</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-24">FAQs</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-28">Footer</th>
                     <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Actions</th>
                   </tr>
                 </thead>
@@ -312,6 +314,18 @@ const CityPageManager = () => {
                         {city.metaKeyword
                           ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ Set</span>
                           : <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600 font-medium">Empty</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3">
+                        {city.faqs && city.faqs.length > 0
+                          ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ {city.faqs.length}</span>
+                          : <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600 font-medium">Empty</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3">
+                        {city.footerContent && city.footerContent.trim().length > 0
+                          ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ Set</span>
+                          : <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">— None</span>
                         }
                       </td>
                       <td className="px-4 py-3">
