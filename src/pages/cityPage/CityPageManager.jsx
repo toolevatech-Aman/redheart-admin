@@ -140,7 +140,7 @@ const CityPageManager = () => {
 
   // ── Regenerate all cities for current category ─────────────────────────────
   const handleRegenerate = async () => {
-    if (!window.confirm(`Re-generate H1, Meta Title, Meta Description, Meta Keywords & Breadcrumb for ALL ${activeCategory} cities?\n\nFooter content & FAQs will NOT be changed.`)) return;
+    if (!window.confirm(`Re-generate H1, Meta Title, Meta Description, Meta Keywords, Breadcrumb & FAQs for ALL ${activeCategory} cities?\n\nFooter content will NOT be changed.`)) return;
     setRegenLoading(true);
     setRegenResult(null);
     try {
