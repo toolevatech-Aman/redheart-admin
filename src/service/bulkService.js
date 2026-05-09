@@ -1,5 +1,24 @@
 import { Get, Post, PostMultipart } from "./axiosService";
-import apiClient from "./axiosService";
+
+const BASE = "https://backend.redheart.in/api";
+
+// Shared helper — triggers a file download from a fetch Response
+const triggerDownload = async (response, filename) => {
+  const blob = await response.blob();
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href     = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+// Shared helper — get auth header
+const authHeader = () => ({
+  Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+});
 
 // ── Upload ────────────────────────────────────────────────────────────────────
 // Step 1: upload file → get validation preview
@@ -21,75 +40,45 @@ export const getImportHistory = async (category = "all", page = 1, limit = 20) =
   return res.data;
 };
 
-export const downloadErrorReport = (jobId) => {
-  const token = localStorage.getItem("authToken");
-  const url   = `https://backend.redheart.in/api/bulk/errors/${jobId}`;
-  const a     = document.createElement("a");
-  a.href      = `${url}?token=${token}`;
-  // Use fetch with auth header for proper download
-  fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-    .then(r => r.blob())
-    .then(blob => {
-      const link = document.createElement("a");
-      link.href  = URL.createObjectURL(blob);
-      link.download = `error-report-${jobId}.xlsx`;
-      link.click();
-    });
+export const downloadErrorReport = async (jobId) => {
+  const response = await fetch(`${BASE}/bulk/errors/${jobId}`, { headers: authHeader() });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Error report download failed (${response.status})`);
+  }
+  await triggerDownload(response, `error-report-${jobId}.xlsx`);
 };
 
 // ── Export ────────────────────────────────────────────────────────────────────
 export const exportProducts = async (category, filters = {}, format = "xlsx") => {
-  const token = localStorage.getItem("authToken");
-  const params = new URLSearchParams({ format, ...filters }).toString();
-  const url   = `https://backend.redheart.in/api/bulk/export/${category}?${params}`;
-
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const params   = new URLSearchParams({ format, ...filters }).toString();
+  const response = await fetch(`${BASE}/bulk/export/${category}?${params}`, { headers: authHeader() });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.error || "Export failed");
+    throw new Error(err.error || `Export failed (${response.status})`);
   }
-  const blob     = await response.blob();
-  const filename = `${category.toLowerCase()}-export-${Date.now()}.${format}`;
-  const link     = document.createElement("a");
-  link.href      = URL.createObjectURL(blob);
-  link.download  = filename;
-  link.click();
+  await triggerDownload(response, `${category.toLowerCase()}-export-${Date.now()}.${format}`);
 };
 
 // Export for edit workflow
 export const exportForEdit = async (category, filters = {}) => {
-  const token  = localStorage.getItem("authToken");
-  const params = new URLSearchParams({ format: "xlsx", ...filters }).toString();
-  const url    = `https://backend.redheart.in/api/bulk/edit-export/${category}?${params}`;
-
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!response.ok) throw new Error("Export for edit failed");
-  const blob     = await response.blob();
-  const link     = document.createElement("a");
-  link.href      = URL.createObjectURL(blob);
-  link.download  = `${category.toLowerCase()}-edit-${Date.now()}.xlsx`;
-  link.click();
+  const params   = new URLSearchParams({ format: "xlsx", ...filters }).toString();
+  const response = await fetch(`${BASE}/bulk/edit-export/${category}?${params}`, { headers: authHeader() });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Edit export failed (${response.status})`);
+  }
+  await triggerDownload(response, `${category.toLowerCase()}-edit-${Date.now()}.xlsx`);
 };
 
 // ── Template download ─────────────────────────────────────────────────────────
 export const downloadTemplate = async (category) => {
-  const token = localStorage.getItem("authToken");
-  const url   = `https://backend.redheart.in/api/bulk/template/${category}`;
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const response = await fetch(`${BASE}/bulk/template/${category}`, { headers: authHeader() });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.error || `Template download failed (${response.status})`);
   }
-  const blob = await response.blob();
-  const link = document.createElement("a");
-  link.href     = URL.createObjectURL(blob);
-  link.download = `${category.toLowerCase()}_upload_template.xlsx`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  await triggerDownload(response, `${category.toLowerCase()}_upload_template.xlsx`);
 };
 
 // ── Stats ─────────────────────────────────────────────────────────────────────

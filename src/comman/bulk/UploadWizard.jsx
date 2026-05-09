@@ -162,7 +162,7 @@ export default function UploadWizard({ category, mode = "upload" }) {
               <div className="flex items-center justify-between px-4 py-3 bg-red-50 border-b border-red-200">
                 <h3 className="font-semibold text-red-700 text-sm">Row Errors (preview — first 100)</h3>
                 {preview.jobId && (
-                  <button onClick={() => downloadErrorReport(preview.jobId)}
+                  <button onClick={() => downloadErrorReport(preview.jobId).catch(e => setError(e.message))}
                     className="text-xs text-red-600 underline hover:text-red-800">
                     ⬇ Download Full Error Report
                   </button>
