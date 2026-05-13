@@ -35,6 +35,7 @@ const EMPTY_FORM = {
 export default function AddOnManager() {
     const [addOns, setAddOns] = useState([]);
     const [categoryFilter, setCategoryFilter] = useState("");
+    const [tagFilter, setTagFilter] = useState("all"); // "all" | "popular" | "bestseller"
     const [modalOpen, setModalOpen] = useState(false);
     const [editingAddOn, setEditingAddOn] = useState(null);
     const [formData, setFormData] = useState(EMPTY_FORM);
@@ -171,6 +172,29 @@ export default function AddOnManager() {
                 </button>
             </div>
 
+            {/* Tag Filter Buttons */}
+            <div className="flex gap-2 mb-4">
+                {[
+                    { key: "all",        label: "All" },
+                    { key: "popular",    label: "🔥 Popular" },
+                    { key: "bestseller", label: "⭐ Best Seller" },
+                ].map((f) => (
+                    <button
+                        key={f.key}
+                        onClick={() => setTagFilter(f.key)}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                            tagFilter === f.key
+                                ? "bg-gray-800 text-white border-gray-800"
+                                : "bg-white text-gray-600 border-gray-300 hover:border-gray-500"
+                        }`}
+                    >
+                        {f.label}
+                        {f.key === "popular"    && <span className="ml-1 text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">{addOns.filter(a => a.isPopular).length}</span>}
+                        {f.key === "bestseller" && <span className="ml-1 text-xs bg-teal-100 text-teal-600 px-1.5 py-0.5 rounded-full">{addOns.filter(a => a.isBestSeller).length}</span>}
+                    </button>
+                ))}
+            </div>
+
             {/* AddOns Table */}
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white shadow rounded">
@@ -198,7 +222,13 @@ export default function AddOnManager() {
                                 <td colSpan="7" className="text-center py-4">No AddOns found.</td>
                             </tr>
                         ) : (
-                            addOns.map((a) => {
+                            addOns
+                            .filter((a) => {
+                                if (tagFilter === "popular")    return a.isPopular;
+                                if (tagFilter === "bestseller") return a.isBestSeller;
+                                return true;
+                            })
+                            .map((a) => {
                                 const cats = Array.isArray(a.categories) && a.categories.length > 0
                                     ? a.categories
                                     : [];
