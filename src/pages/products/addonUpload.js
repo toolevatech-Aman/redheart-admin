@@ -200,15 +200,21 @@ export default function AddOnManager() {
                             addOns.map((a) => {
                                 const cats = Array.isArray(a.categories) && a.categories.length > 0
                                     ? a.categories
-                                    : a.category ? [a.category] : [];
+                                    : [];
+                                const notAssigned = cats.length === 0;
                                 return (
-                                    <tr key={a._id} className={`border-b ${a.softDelete ? "bg-red-100 text-red-700" : "bg-white"}`}>
+                                    <tr key={a._id} className={`border-b ${a.softDelete ? "bg-red-100 text-red-700" : notAssigned ? "bg-yellow-50" : "bg-white"}`}>
                                         <td className="px-4 py-2">
                                             <img src={a.image} alt={a.name} className={`w-16 h-16 object-cover rounded ${a.softDelete ? "opacity-50" : ""}`} />
                                         </td>
                                         <td className="px-4 py-2 font-medium">{a.name}</td>
                                         <td className="px-4 py-2 text-sm text-gray-600">{a.category || "—"}</td>
                                         <td className="px-4 py-2">
+                                            {notAssigned ? (
+                                                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded border border-yellow-300">
+                                                    ⚠️ Not assigned — click Edit
+                                                </span>
+                                            ) : (
                                             <div className="flex flex-wrap gap-1">
                                                 {cats.map((cat) => {
                                                     const found = ADDON_CATEGORIES.find(c => c.label === cat);
@@ -219,6 +225,7 @@ export default function AddOnManager() {
                                                     );
                                                 })}
                                             </div>
+                                            )}
                                         </td>
                                         <td className="px-4 py-2">₹{a.sellingPrice}</td>
                                         <td className="px-4 py-2">{a.originalPrice ? `₹${a.originalPrice}` : "—"}</td>
