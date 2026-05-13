@@ -21,7 +21,8 @@ const ADDON_CATEGORIES = [
 
 const EMPTY_FORM = {
     image: "",
-    categories: [],
+    category: "",   // used for hamper customization
+    categories: [], // used for add-on page tabs
     name: "",
     costPrice: "",
     sellingPrice: "",
@@ -56,10 +57,10 @@ export default function AddOnManager() {
     const openModal = (addOn = null) => {
         setEditingAddOn(addOn);
         if (addOn) {
-            // Support old single `category` string + new `categories` array
+            // `categories` = add-on page tabs (array), `category` = hamper customization (string)
             const cats = Array.isArray(addOn.categories) && addOn.categories.length > 0
                 ? addOn.categories
-                : addOn.category ? [addOn.category] : [];
+                : [];
             setFormData({ ...EMPTY_FORM, ...addOn, categories: cats });
         } else {
             setFormData(EMPTY_FORM);
@@ -176,7 +177,8 @@ export default function AddOnManager() {
                         <tr className="bg-gray-200 text-left">
                             <th className="px-4 py-2">Image</th>
                             <th className="px-4 py-2">Name</th>
-                            <th className="px-4 py-2">Categories</th>
+                            <th className="px-4 py-2">Category (Hamper)</th>
+                            <th className="px-4 py-2">Add-On Categories</th>
                             <th className="px-4 py-2">Selling Price</th>
                             <th className="px-4 py-2">Original Price</th>
                             <th className="px-4 py-2">Best Seller</th>
@@ -205,6 +207,7 @@ export default function AddOnManager() {
                                             <img src={a.image} alt={a.name} className={`w-16 h-16 object-cover rounded ${a.softDelete ? "opacity-50" : ""}`} />
                                         </td>
                                         <td className="px-4 py-2 font-medium">{a.name}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-600">{a.category || "—"}</td>
                                         <td className="px-4 py-2">
                                             <div className="flex flex-wrap gap-1">
                                                 {cats.map((cat) => {
@@ -262,6 +265,15 @@ export default function AddOnManager() {
                             <div>
                                 <label className="block text-sm font-medium mb-1">Name</label>
                                 <input type="text" name="name" value={formData.name} onChange={handleChange} className="border p-2 rounded w-full" required />
+                            </div>
+
+                            {/* Category — for hamper customization */}
+                            <div>
+                                <label className="block text-sm font-medium mb-1">
+                                    Category
+                                    <span className="text-gray-400 font-normal ml-1">(for hamper customization)</span>
+                                </label>
+                                <input type="text" name="category" value={formData.category} onChange={handleChange} className="border p-2 rounded w-full" />
                             </div>
 
                             {/* Prices */}
