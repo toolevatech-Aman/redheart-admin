@@ -4,6 +4,7 @@ import {
     editAddOn,
     softDeleteAddOn,
     fetchAllAddOns,
+    fetchAddOnsByCategory,
 } from "../../service/addOn";
 
 const ADDON_CATEGORIES = [
@@ -31,6 +32,7 @@ const EMPTY_FORM = {
 
 export default function AddOnManager() {
     const [addOns, setAddOns] = useState([]);
+    const [categoryFilter, setCategoryFilter] = useState("");
     const [modalOpen, setModalOpen] = useState(false);
     const [editingAddOn, setEditingAddOn] = useState(null);
     const [formData, setFormData] = useState(EMPTY_FORM);
@@ -123,13 +125,45 @@ export default function AddOnManager() {
         }
     };
 
+    const handleCategoryFilter = async () => {
+        setLoading(true);
+        try {
+            if (categoryFilter.trim() === "") {
+                await loadAddOns();
+                return;
+            }
+            const data = await fetchAddOnsByCategory(categoryFilter);
+            setAddOns(data);
+        } catch (err) {
+            console.error("Error filtering by category:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold">AddOn Manager</h1>
+            <h1 className="text-3xl font-bold mb-4">AddOn Manager</h1>
+
+            {/* Filter */}
+            <div className="flex items-center mb-4 gap-2">
+                <input
+                    type="text"
+                    placeholder="Filter by category..."
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="border p-2 rounded w-64"
+                />
+                <button
+                    onClick={handleCategoryFilter}
+                    disabled={loading}
+                    className={`px-4 py-2 rounded ${loading ? "bg-blue-300" : "bg-blue-500 hover:bg-blue-600 text-white"}`}
+                >
+                    {loading ? <span className="loader-border inline-block w-4 h-4 border-2 border-t-white border-gray-300 rounded-full animate-spin"></span> : "Filter"}
+                </button>
                 <button
                     onClick={() => openModal()}
-                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 ml-auto"
                 >
                     + Add AddOn
                 </button>
