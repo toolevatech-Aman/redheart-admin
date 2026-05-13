@@ -4,27 +4,39 @@ import {
     editAddOn,
     softDeleteAddOn,
     fetchAllAddOns,
-    fetchAddOnsByCategory,
 } from "../../service/addOn";
+
+const ADDON_CATEGORIES = [
+    { label: "Flower",        icon: "🌸" },
+    { label: "Cake Toppers",  icon: "🎂" },
+    { label: "Greeting Card", icon: "💌" },
+    { label: "Cake",          icon: "🍰" },
+    { label: "Teddy",         icon: "🧸" },
+    { label: "Chocolates",    icon: "🍫" },
+    { label: "Plants",        icon: "🌿" },
+    { label: "Candles",       icon: "🕯️" },
+    { label: "Gifts",         icon: "🎁" },
+];
+
+const EMPTY_FORM = {
+    image: "",
+    categories: [],
+    name: "",
+    costPrice: "",
+    sellingPrice: "",
+    originalPrice: "",
+    addOn: true,
+    isBestSeller: false,
+};
 
 export default function AddOnManager() {
     const [addOns, setAddOns] = useState([]);
-    const [categoryFilter, setCategoryFilter] = useState("");
     const [modalOpen, setModalOpen] = useState(false);
     const [editingAddOn, setEditingAddOn] = useState(null);
-    const [formData, setFormData] = useState({
-        image: "",
-        category: "",
-        name: "",
-        costPrice: "",
-        sellingPrice: "",
-        originalPrice: "",
-        addOn: true,
-    });
-    const [loading, setLoading] = useState(false); // loader for main table
-    const [formLoading, setFormLoading] = useState(false); // loader for form submit
+    const [formData, setFormData] = useState(EMPTY_FORM);
+    const [loading, setLoading] = useState(false);
+    const [formLoading, setFormLoading] = useState(false);
 
-    // Fetch all addOns (admin view)
     const loadAddOns = async () => {
         setLoading(true);
         try {
@@ -37,62 +49,57 @@ export default function AddOnManager() {
         }
     };
 
-    useEffect(() => {
-        loadAddOns();
-    }, []);
+    useEffect(() => { loadAddOns(); }, []);
 
-    // Fetch by category (public)
-    const handleCategoryFilter = async () => {
-        setLoading(true);
-        try {
-            if (categoryFilter.trim() === "") {
-                await loadAddOns();
-                return;
-            }
-            const data = await fetchAddOnsByCategory(categoryFilter);
-            setAddOns(data);
-        } catch (err) {
-            console.error("Error filtering by category:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Open modal for create/edit
     const openModal = (addOn = null) => {
         setEditingAddOn(addOn);
-        setFormData(
-            addOn || {
-                image: "",
-                category: "",
-                name: "",
-                costPrice: "",
-                sellingPrice: "",
-                originalPrice: "",
-                addOn: true,
-            }
-        );
+        if (addOn) {
+            // Support old single `category` string + new `categories` array
+            const cats = Array.isArray(addOn.categories) && addOn.categories.length > 0
+                ? addOn.categories
+                : addOn.category ? [addOn.category] : [];
+            setFormData({ ...EMPTY_FORM, ...addOn, categories: cats });
+        } else {
+            setFormData(EMPTY_FORM);
+        }
         setModalOpen(true);
     };
 
-    // Handle input change
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData({
-            ...formData,
+        setFormData((prev) => ({
+            ...prev,
             [name]: type === "checkbox" ? checked : value,
+        }));
+    };
+
+    // Toggle a category in/out of the categories array
+    const toggleCategory = (cat) => {
+        setFormData((prev) => {
+            const exists = prev.categories.includes(cat);
+            return {
+                ...prev,
+                categories: exists
+                    ? prev.categories.filter((c) => c !== cat)
+                    : [...prev.categories, cat],
+                addOn: true, // always true if in any category
+            };
         });
     };
 
-    // Submit form
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (formData.categories.length === 0) {
+            alert("Please select at least one category.");
+            return;
+        }
         setFormLoading(true);
         try {
+            const payload = { ...formData, category: formData.categories[0] }; // keep backward compat
             if (editingAddOn) {
-                await editAddOn(editingAddOn._id, formData);
+                await editAddOn(editingAddOn._id, payload);
             } else {
-                await createAddOn(formData);
+                await createAddOn(payload);
             }
             setModalOpen(false);
             await loadAddOns();
@@ -103,7 +110,6 @@ export default function AddOnManager() {
         }
     };
 
-    // Soft delete
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this AddOn?")) return;
         setLoading(true);
@@ -119,27 +125,11 @@ export default function AddOnManager() {
 
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
-            <h1 className="text-3xl font-bold mb-4">AddOn Manager</h1>
-
-            {/* Filter */}
-            <div className="flex items-center mb-4 gap-2">
-                <input
-                    type="text"
-                    placeholder="Filter by category..."
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="border p-2 rounded w-64"
-                />
-                <button
-                    onClick={handleCategoryFilter}
-                    disabled={loading}
-                    className={`px-4 py-2 rounded ${loading ? "bg-blue-300" : "bg-blue-500 hover:bg-blue-600 text-white"}`}
-                >
-                    {loading ? <span className="loader-border inline-block w-4 h-4 border-2 border-t-white border-gray-300 rounded-full animate-spin"></span> : "Filter"}
-                </button>
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-3xl font-bold">AddOn Manager</h1>
                 <button
                     onClick={() => openModal()}
-                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 ml-auto"
+                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 >
                     + Add AddOn
                 </button>
@@ -149,90 +139,71 @@ export default function AddOnManager() {
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white shadow rounded">
                     <thead>
-                        <tr className="bg-gray-200">
+                        <tr className="bg-gray-200 text-left">
                             <th className="px-4 py-2">Image</th>
-                            <th className="px-4 py-2">Category</th>
                             <th className="px-4 py-2">Name</th>
-                            <th className="px-4 py-2">Cost Price</th>
+                            <th className="px-4 py-2">Categories</th>
                             <th className="px-4 py-2">Selling Price</th>
                             <th className="px-4 py-2">Original Price</th>
-                            <th className="px-4 py-2">AddOn</th>
+                            <th className="px-4 py-2">Best Seller</th>
                             <th className="px-4 py-2">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan="8" className="text-center py-6">
+                                <td colSpan="7" className="text-center py-6">
                                     <span className="loader-border inline-block w-8 h-8 border-4 border-t-blue-500 border-gray-300 rounded-full animate-spin"></span>
                                 </td>
                             </tr>
                         ) : addOns.length === 0 ? (
                             <tr>
-                                <td colSpan="8" className="text-center py-4">
-                                    No AddOns found.
-                                </td>
+                                <td colSpan="7" className="text-center py-4">No AddOns found.</td>
                             </tr>
                         ) : (
-                            addOns.map((a) => (
-                                <tr
-                                    key={a._id}
-                                    className={`border-b ${a.softDelete ? "bg-red-100 text-red-700" : "bg-white"
-                                        }`}
-                                >
-                                    <td className="px-4 py-2">
-                                        <img
-                                            src={a.image}
-                                            alt={a.name}
-                                            className={`w-16 h-16 object-cover rounded ${a.softDelete ? "opacity-50" : ""
-                                                }`}
-                                        />
-                                    </td>
-
-                                    <td className="px-4 py-2">{a.category}</td>
-                                    <td className="px-4 py-2 font-medium">{a.name}</td>
-
-                                    <td className="px-4 py-2">{a.costPrice}</td>
-                                    <td className="px-4 py-2">{a.sellingPrice}</td>
-                                    <td className="px-4 py-2">{a.originalPrice}</td>
-
-                                    <td className="px-4 py-2">
-                                        {a.addOn ? "Yes" : "No"}
-                                    </td>
-
-                                    <td className="px-4 py-2 space-x-2">
-                                        {/* Edit button always visible */}
-                                        <button
-                                            onClick={() => openModal(a)}
-                                            className="bg-yellow-400 px-2 py-1 rounded hover:bg-yellow-500"
-                                        >
-                                            Edit
-                                        </button>
-
-                                        {/* Show Delete button ONLY if not soft deleted */}
-                                        {!a.softDelete && (
-                                            <button
-                                                onClick={() => handleDelete(a._id)}
-                                                disabled={loading}
-                                                className={`px-2 py-1 rounded text-white ${loading
-                                                        ? "bg-red-300"
-                                                        : "bg-red-500 hover:bg-red-600"
-                                                    }`}
-                                            >
-                                                Delete
-                                            </button>
-                                        )}
-
-                                        {/* Deleted badge */}
-                                        {a.softDelete && (
-                                            <span className="ml-2 px-2 py-1 text-xs font-semibold bg-red-500 text-white rounded">
-                                                Deleted
-                                            </span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))
-
+                            addOns.map((a) => {
+                                const cats = Array.isArray(a.categories) && a.categories.length > 0
+                                    ? a.categories
+                                    : a.category ? [a.category] : [];
+                                return (
+                                    <tr key={a._id} className={`border-b ${a.softDelete ? "bg-red-100 text-red-700" : "bg-white"}`}>
+                                        <td className="px-4 py-2">
+                                            <img src={a.image} alt={a.name} className={`w-16 h-16 object-cover rounded ${a.softDelete ? "opacity-50" : ""}`} />
+                                        </td>
+                                        <td className="px-4 py-2 font-medium">{a.name}</td>
+                                        <td className="px-4 py-2">
+                                            <div className="flex flex-wrap gap-1">
+                                                {cats.map((cat) => {
+                                                    const found = ADDON_CATEGORIES.find(c => c.label === cat);
+                                                    return (
+                                                        <span key={cat} className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs rounded-full font-medium">
+                                                            {found ? found.icon : ""} {cat}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-2">₹{a.sellingPrice}</td>
+                                        <td className="px-4 py-2">{a.originalPrice ? `₹${a.originalPrice}` : "—"}</td>
+                                        <td className="px-4 py-2">
+                                            {a.isBestSeller ? (
+                                                <span className="px-2 py-1 bg-teal-100 text-teal-700 text-xs font-semibold rounded">✓ Best Seller</span>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-2 space-x-2">
+                                            <button onClick={() => openModal(a)} className="bg-yellow-400 px-2 py-1 rounded hover:bg-yellow-500">Edit</button>
+                                            {!a.softDelete && (
+                                                <button onClick={() => handleDelete(a._id)} disabled={loading} className={`px-2 py-1 rounded text-white ${loading ? "bg-red-300" : "bg-red-500 hover:bg-red-600"}`}>Delete</button>
+                                            )}
+                                            {a.softDelete && (
+                                                <span className="ml-2 px-2 py-1 text-xs font-semibold bg-red-500 text-white rounded">Deleted</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
@@ -240,109 +211,94 @@ export default function AddOnManager() {
 
             {/* Modal */}
             {modalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-white p-6 rounded w-full max-w-lg relative">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+                    <div className="bg-white p-6 rounded-xl w-full max-w-lg relative max-h-[90vh] overflow-y-auto">
                         <h2 className="text-xl font-bold mb-4">
                             {editingAddOn ? "Edit AddOn" : "Create AddOn"}
                         </h2>
-                        <form onSubmit={handleSubmit} className="space-y-3">
+                        <form onSubmit={handleSubmit} className="space-y-4">
+
+                            {/* Image */}
                             <div>
-                                <label className="block">Image URL</label>
-                                <input
-                                    type="text"
-                                    name="image"
-                                    value={formData.image}
-                                    onChange={handleChange}
-                                    className="border p-2 rounded w-full"
-                                    required
-                                />
+                                <label className="block text-sm font-medium mb-1">Image URL</label>
+                                <input type="text" name="image" value={formData.image} onChange={handleChange} className="border p-2 rounded w-full" required />
                             </div>
+
+                            {/* Name */}
                             <div>
-                                <label className="block">Category</label>
-                                <input
-                                    type="text"
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleChange}
-                                    className="border p-2 rounded w-full"
-                                    required
-                                />
+                                <label className="block text-sm font-medium mb-1">Name</label>
+                                <input type="text" name="name" value={formData.name} onChange={handleChange} className="border p-2 rounded w-full" required />
                             </div>
-                            <div>
-                                <label className="block">Name</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    className="border p-2 rounded w-full"
-                                    required
-                                />
-                            </div>
+
+                            {/* Prices */}
                             <div className="flex gap-2">
                                 <div className="flex-1">
-                                    <label className="block">Cost Price</label>
-                                    <input
-                                        type="number"
-                                        name="costPrice"
-                                        value={formData.costPrice}
-                                        onChange={handleChange}
-                                        className="border p-2 rounded w-full"
-                                        required
-                                    />
+                                    <label className="block text-sm font-medium mb-1">Cost Price</label>
+                                    <input type="number" name="costPrice" value={formData.costPrice} onChange={handleChange} className="border p-2 rounded w-full" required />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block">Selling Price</label>
-                                    <input
-                                        type="number"
-                                        name="sellingPrice"
-                                        value={formData.sellingPrice}
-                                        onChange={handleChange}
-                                        className="border p-2 rounded w-full"
-                                        required
-                                    />
+                                    <label className="block text-sm font-medium mb-1">Selling Price</label>
+                                    <input type="number" name="sellingPrice" value={formData.sellingPrice} onChange={handleChange} className="border p-2 rounded w-full" required />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block">Original Price</label>
-                                    <input
-                                        type="number"
-                                        name="originalPrice"
-                                        value={formData.originalPrice}
-                                        onChange={handleChange}
-                                        className="border p-2 rounded w-full"
-                                        required
-                                    />
+                                    <label className="block text-sm font-medium mb-1">Original Price</label>
+                                    <input type="number" name="originalPrice" value={formData.originalPrice} onChange={handleChange} className="border p-2 rounded w-full" />
                                 </div>
                             </div>
+
+                            {/* Categories */}
                             <div>
-                                <label className="inline-flex items-center">
+                                <label className="block text-sm font-medium mb-2">
+                                    Add to Categories <span className="text-red-500">*</span>
+                                    <span className="text-gray-400 font-normal ml-1">(tick all that apply)</span>
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {ADDON_CATEGORIES.map((cat) => {
+                                        const isChecked = formData.categories.includes(cat.label);
+                                        return (
+                                            <label
+                                                key={cat.label}
+                                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
+                                                    isChecked
+                                                        ? "border-red-500 bg-red-50 text-red-700 font-semibold"
+                                                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                                                }`}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isChecked}
+                                                    onChange={() => toggleCategory(cat.label)}
+                                                    className="accent-red-500"
+                                                />
+                                                <span>{cat.icon}</span>
+                                                <span className="text-sm">{cat.label}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                                {formData.categories.length === 0 && (
+                                    <p className="text-xs text-red-400 mt-1">Select at least one category</p>
+                                )}
+                            </div>
+
+                            {/* Best Seller */}
+                            <div>
+                                <label className="inline-flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"
-                                        name="addOn"
-                                        checked={formData.addOn}
+                                        name="isBestSeller"
+                                        checked={formData.isBestSeller}
                                         onChange={handleChange}
-                                        className="mr-2"
+                                        className="accent-teal-600 w-4 h-4"
                                     />
-                                    Is AddOn?
+                                    <span className="text-sm font-medium">Mark as Best Seller</span>
                                 </label>
                             </div>
-                            <div className="flex justify-end gap-2 mt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setModalOpen(false)}
-                                    className="px-4 py-2 rounded border"
-                                    disabled={formLoading}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
-                                    disabled={formLoading}
-                                >
-                                    {formLoading && (
-                                        <span className="loader-border inline-block w-4 h-4 border-2 border-t-white border-gray-300 rounded-full animate-spin"></span>
-                                    )}
+
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 rounded border" disabled={formLoading}>Cancel</button>
+                                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2" disabled={formLoading}>
+                                    {formLoading && <span className="loader-border inline-block w-4 h-4 border-2 border-t-white border-gray-300 rounded-full animate-spin"></span>}
                                     {editingAddOn ? "Update" : "Create"}
                                 </button>
                             </div>
@@ -351,13 +307,7 @@ export default function AddOnManager() {
                 </div>
             )}
 
-            {/* Loader Tailwind spinner class */}
-            <style>{`
-        .loader-border {
-          border-top-color: transparent;
-          border-left-color: transparent;
-        }
-      `}</style>
+            <style>{`.loader-border { border-top-color: transparent; border-left-color: transparent; }`}</style>
         </div>
     );
 }
