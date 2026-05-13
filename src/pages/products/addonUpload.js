@@ -29,6 +29,7 @@ const EMPTY_FORM = {
     originalPrice: "",
     addOn: true,
     isBestSeller: false,
+    isPopular: false,
 };
 
 export default function AddOnManager() {
@@ -230,11 +231,11 @@ export default function AddOnManager() {
                                         <td className="px-4 py-2">₹{a.sellingPrice}</td>
                                         <td className="px-4 py-2">{a.originalPrice ? `₹${a.originalPrice}` : "—"}</td>
                                         <td className="px-4 py-2">
-                                            {a.isBestSeller ? (
-                                                <span className="px-2 py-1 bg-teal-100 text-teal-700 text-xs font-semibold rounded">✓ Best Seller</span>
-                                            ) : (
-                                                <span className="text-gray-400 text-xs">—</span>
-                                            )}
+                                            <div className="flex flex-col gap-1">
+                                                {a.isBestSeller && <span className="px-2 py-1 bg-teal-100 text-teal-700 text-xs font-semibold rounded w-fit">⭐ Best Seller</span>}
+                                                {a.isPopular && <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded w-fit">🔥 Popular</span>}
+                                                {!a.isBestSeller && !a.isPopular && <span className="text-gray-400 text-xs">—</span>}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-2 space-x-2">
                                             <button onClick={() => openModal(a)} className="bg-yellow-400 px-2 py-1 rounded hover:bg-yellow-500">Edit</button>
@@ -334,8 +335,8 @@ export default function AddOnManager() {
                                 )}
                             </div>
 
-                            {/* Best Seller */}
-                            <div>
+                            {/* Best Seller + Popular */}
+                            <div className="flex gap-6">
                                 <label className="inline-flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -344,7 +345,17 @@ export default function AddOnManager() {
                                         onChange={handleChange}
                                         className="accent-teal-600 w-4 h-4"
                                     />
-                                    <span className="text-sm font-medium">Mark as Best Seller</span>
+                                    <span className="text-sm font-medium">⭐ Best Seller</span>
+                                </label>
+                                <label className="inline-flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        name="isPopular"
+                                        checked={formData.isPopular}
+                                        onChange={handleChange}
+                                        className="accent-orange-500 w-4 h-4"
+                                    />
+                                    <span className="text-sm font-medium">🔥 Popular</span>
                                 </label>
                             </div>
 
