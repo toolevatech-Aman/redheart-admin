@@ -1,6 +1,24 @@
 import React, { useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "../../firebase" // adjust path
+import imageCompression from "browser-image-compression";
+
+// Compress + convert to WebP before upload.
+// Target: ≤ 200 KB, max 1200 px wide, WebP output.
+const compressToWebP = async (file) => {
+  const options = {
+    maxSizeMB: 0.2,          // 200 KB ceiling
+    maxWidthOrHeight: 1200,   // resize if wider/taller
+    useWebWorker: true,
+    fileType: "image/webp",   // always output WebP
+    initialQuality: 0.82,
+  };
+  const compressed = await imageCompression(file, options);
+  // Preserve a .webp extension so Storage content-type is set correctly
+  return new File([compressed], file.name.replace(/\.[^.]+$/, ".webp"), {
+    type: "image/webp",
+  });
+};
 
 const ImageUploader = ({ productId, onUploadComplete }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -23,9 +41,16 @@ const ImageUploader = ({ productId, onUploadComplete }) => {
       const results = [];
 
       for (let file of selectedFiles) {
-        const fileName = `${productId}/${Date.now()}-${file.name}`;
+        // Compress + convert to WebP client-side before upload
+        setProgress((prev) => ({ ...prev, [file.name]: "compressing…" }));
+        const webpFile = await compressToWebP(file);
+
+        const fileName = `${productId}/${Date.now()}-${webpFile.name}`;
         const storageRef = ref(storage, `product-images/${fileName}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
+        const uploadTask = uploadBytesResumable(storageRef, webpFile, {
+          contentType: "image/webp",
+          cacheControl: "public, max-age=31536000",
+        });
 
         // Wait for each file upload to finish
         const url = await new Promise((resolve, reject) => {
@@ -44,7 +69,7 @@ const ImageUploader = ({ productId, onUploadComplete }) => {
           );
         });
 
-        results.push({ name: file.name, url });
+        results.push({ name: webpFile.name, url });
       }
 
       setUploadedImages([...uploadedImages, ...results]);
@@ -81,7 +106,9 @@ const ImageUploader = ({ productId, onUploadComplete }) => {
             <div key={file.name} className="flex items-center justify-between bg-premium-beige p-2 sm:p-3 rounded-md">
               <span className="text-xs sm:text-sm text-black truncate flex-1">{file.name}</span>
               <span className="text-xs sm:text-sm font-semibold text-black ml-2">
-                {progress[file.name] || 0}%
+                {progress[file.name] === "compressing…"
+                  ? "⚙ compressing…"
+                  : `${progress[file.name] || 0}%`}
               </span>
             </div>
           ))}

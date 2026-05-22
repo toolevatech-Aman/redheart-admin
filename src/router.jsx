@@ -13,7 +13,9 @@ const DeleteProducts  = lazy(() => import("./pages/products/deleteProducts"));
 const ImageUpload     = lazy(() => import("./pages/image-upload/image-upload"));
 const AddonUpload     = lazy(() => import("./pages/products/addonUpload"));
 const QuestionsPage   = lazy(() => import("./pages/questions/QuestionsPage"));
-const CityPageManager = lazy(() => import("./pages/cityPage/CityPageManager"));
+const CityPageManager          = lazy(() => import("./pages/cityPage/CityPageManager"));
+const CategorySeoManager       = lazy(() => import("./pages/categoryPage/CategorySeoManager"));
+const CategoryConfigManager    = lazy(() => import("./pages/categoryConfig/CategoryConfigManager"));
 
 // ── Bulk Upload ───────────────────────────────────────────────────────────────
 const FlowersUpload   = lazy(() => import("./pages/products/upload/FlowersUpload"));
@@ -55,7 +57,9 @@ const Router = () => {
     { path: "/addonUpload",   element: <AddonUpload />,         protected: true },
     { path: "/pageContent",   element: <AdminPageContentEditor />, protected: true },
     { path: "/questions",     element: <QuestionsPage />,       protected: true },
-    { path: "/city-pages",    element: <CityPageManager />,     protected: true },
+    { path: "/city-pages",      element: <CityPageManager />,    protected: true },
+    { path: "/category-pages",   element: <CategorySeoManager />,    protected: true },
+    { path: "/category-config",  element: <CategoryConfigManager />, protected: true },
     { path: "/orders",        element: <OrderPage />,           protected: true },
     // ── Bulk Upload ──
     { path: "/upload/flowers", element: <FlowersUpload />, protected: true },

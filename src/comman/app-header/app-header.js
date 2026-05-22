@@ -58,8 +58,10 @@ const NAV = [
     ],
   },
   { label: "Questions",  path: "/questions"  },
-  { label: "City Pages", path: "/city-pages" },
-  { label: "Orders",     path: "/orders"     },
+  { label: "City Pages",     path: "/city-pages"     },
+  { label: "Category Pages",  path: "/category-pages"  },
+  { label: "Category Config", path: "/category-config" },
+  { label: "Orders",          path: "/orders"          },
 ];
 
 // ── Dropdown component ────────────────────────────────────────────────────────
