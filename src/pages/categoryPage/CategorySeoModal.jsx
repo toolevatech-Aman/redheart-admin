@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Get } from "../../service/axiosService";
 
 const TABS = [
-  { id: "meta",   label: "META TAGS" },
-  { id: "footer", label: "FOOTER CONTENT" },
-  { id: "faq",    label: "FAQ SCHEMA" },
+  { id: "meta",    label: "META TAGS" },
+  { id: "footer",  label: "FOOTER CONTENT" },
+  { id: "faq",     label: "FAQ SCHEMA" },
+  { id: "pinned",  label: "PINNED PRODUCTS" },
 ];
 
 function buildJsonLd(faqs) {
@@ -25,6 +27,12 @@ const CategorySeoModal = ({ page, onClose, onSave }) => {
   const [activeTab, setActiveTab] = useState("meta");
   const [saving,    setSaving]    = useState(false);
 
+  // Pinned products search state
+  const [pinSearch,    setPinSearch]    = useState("");
+  const [pinResults,   setPinResults]   = useState([]);
+  const [pinSearching, setPinSearching] = useState(false);
+  const searchDebounce = useRef(null);
+
   const [form, setForm] = useState({
     h1:              "",
     metaTitle:       "",
@@ -33,6 +41,7 @@ const CategorySeoModal = ({ page, onClose, onSave }) => {
     metaKeyword:     "",
     footerContent:   "",
     faqs:            [],
+    pinnedProducts:  [],
   });
 
   useEffect(() => {
@@ -47,9 +56,63 @@ const CategorySeoModal = ({ page, onClose, onSave }) => {
         faqs:            page.faqs?.length
           ? page.faqs.map((f) => ({ question: f.question || "", answer: f.answer || "" }))
           : [],
+        pinnedProducts:  page.pinnedProducts?.length
+          ? [...page.pinnedProducts].sort((a, b) => a.position - b.position)
+          : [],
       });
     }
   }, [page]);
+
+  // Search products for pinning
+  useEffect(() => {
+    if (!pinSearch.trim()) { setPinResults([]); return; }
+    clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(async () => {
+      setPinSearching(true);
+      try {
+        const res = await Get(`/products?searchField=${encodeURIComponent(pinSearch)}&limit=8`);
+        setPinResults(res.data?.products || []);
+      } catch { setPinResults([]); }
+      finally { setPinSearching(false); }
+    }, 350);
+  }, [pinSearch]);
+
+  const addPinnedProduct = (product) => {
+    setForm(prev => {
+      if (prev.pinnedProducts.find(p => p.productId === product._id)) return prev;
+      const nextPos = prev.pinnedProducts.length > 0
+        ? Math.max(...prev.pinnedProducts.map(p => p.position)) + 1
+        : 1;
+      return {
+        ...prev,
+        pinnedProducts: [
+          ...prev.pinnedProducts,
+          {
+            productId: product._id,
+            position:  nextPos,
+            name:      product.name,
+            image:     product.media?.primary_image_url || "",
+          },
+        ],
+      };
+    });
+    setPinSearch("");
+    setPinResults([]);
+  };
+
+  const removePinnedProduct = (productId) =>
+    setForm(prev => ({
+      ...prev,
+      pinnedProducts: prev.pinnedProducts.filter(p => p.productId !== productId),
+    }));
+
+  const updatePinnedPosition = (productId, pos) =>
+    setForm(prev => ({
+      ...prev,
+      pinnedProducts: prev.pinnedProducts.map(p =>
+        p.productId === productId ? { ...p, position: Number(pos) } : p
+      ),
+    }));
 
   const handleChange = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -70,6 +133,9 @@ const CategorySeoModal = ({ page, onClose, onSave }) => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Normalise positions: sort by current position, then re-number 1,2,3…
+      const sorted = [...form.pinnedProducts].sort((a, b) => a.position - b.position);
+      const renumbered = sorted.map((p, i) => ({ ...p, position: i + 1 }));
       await onSave(page._id, {
         h1:              form.h1,
         metaTitle:       form.metaTitle,
@@ -78,6 +144,7 @@ const CategorySeoModal = ({ page, onClose, onSave }) => {
         metaKeyword:     form.metaKeyword,
         footerContent:   form.footerContent,
         faqs:            form.faqs,
+        pinnedProducts:  renumbered,
       });
     } finally {
       setSaving(false);
@@ -210,6 +277,88 @@ const CategorySeoModal = ({ page, onClose, onSave }) => {
                     className="border border-gray-200 rounded-lg p-4 bg-gray-50 text-sm prose prose-sm max-w-none"
                     dangerouslySetInnerHTML={{ __html: form.footerContent }}
                   />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PINNED PRODUCTS */}
+          {activeTab === "pinned" && (
+            <div className="space-y-5">
+              <p className="text-sm text-gray-500">
+                Pin specific products to always appear at the top of this page. Assign a position number — lower = higher up.
+              </p>
+
+              {/* Search */}
+              <div className="relative">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Search & Add Product</label>
+                <input
+                  type="text"
+                  value={pinSearch}
+                  onChange={e => setPinSearch(e.target.value)}
+                  placeholder="Type product name..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400"
+                />
+                {(pinResults.length > 0 || pinSearching) && (
+                  <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {pinSearching && <p className="px-4 py-3 text-sm text-gray-400">Searching…</p>}
+                    {!pinSearching && pinResults.map(product => (
+                      <button
+                        key={product._id}
+                        type="button"
+                        onClick={() => addPinnedProduct(product)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-left"
+                      >
+                        {product.media?.primary_image_url && (
+                          <img src={product.media.primary_image_url} alt="" className="w-9 h-9 rounded object-cover flex-shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
+                          <p className="text-xs text-gray-400">{product.categorization?.category_name} · ₹{product.selling_price}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Pinned list */}
+              {form.pinnedProducts.length === 0 ? (
+                <p className="text-sm text-gray-400 italic text-center py-6">No pinned products yet. Search above to add.</p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pinned ({form.pinnedProducts.length})</p>
+                  {[...form.pinnedProducts]
+                    .sort((a, b) => a.position - b.position)
+                    .map(p => (
+                    <div key={p.productId} className="flex items-center gap-3 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50">
+                      {/* Position badge / input */}
+                      <div className="flex-shrink-0 flex flex-col items-center">
+                        <span className="text-xs text-gray-400 mb-0.5">Pos</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={p.position}
+                          onChange={e => updatePinnedPosition(p.productId, e.target.value)}
+                          className="w-12 text-center border border-gray-300 rounded text-sm font-bold text-red-600 py-1 focus:outline-none focus:ring-1 focus:ring-red-300"
+                        />
+                      </div>
+                      {/* Image */}
+                      {p.image && (
+                        <img src={p.image} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                      )}
+                      {/* Name */}
+                      <p className="flex-1 text-sm text-gray-700 truncate">{p.name}</p>
+                      {/* Remove */}
+                      <button
+                        type="button"
+                        onClick={() => removePinnedProduct(p.productId)}
+                        className="text-gray-400 hover:text-red-500 transition-colors text-xl leading-none flex-shrink-0"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
