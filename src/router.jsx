@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./comman/app-layout/app-layout";
 import AdminPageContentEditor from "./pages/pageContent/pageContent";
 import OrderPage from "./pages/orders/order";
+import UsersPage from "./pages/users/UsersPage";
 
 // ── Existing pages ────────────────────────────────────────────────────────────
 const Home            = lazy(() => import("./pages/home/home"));
@@ -61,6 +62,7 @@ const Router = () => {
     { path: "/category-pages",   element: <CategorySeoManager />,    protected: true },
     { path: "/category-config",  element: <CategoryConfigManager />, protected: true },
     { path: "/orders",        element: <OrderPage />,           protected: true },
+    { path: "/users",         element: <UsersPage />,           protected: true },
     // ── Bulk Upload ──
     { path: "/upload/flowers", element: <FlowersUpload />, protected: true },
     { path: "/upload/cakes",   element: <CakesUpload />,   protected: true },
