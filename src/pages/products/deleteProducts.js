@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { deleteProductById, fetchProducts } from "../../service/addProduct";
+import { deleteProductById, fetchProducts, updateProductDeliveryType } from "../../service/addProduct";
 
 const DeleteProducts = () => {
   const [productData, setProductData] = useState([]);
@@ -35,6 +35,23 @@ const DeleteProducts = () => {
       console.error("Error fetching products:", error);
     } finally {
       setLoading(false); // stop loading
+    }
+  };
+
+  const handleToggleDeliveryType = async (productId, currentType) => {
+    const next = currentType === "courier" ? "same_day" : "courier";
+    try {
+      await updateProductDeliveryType(productId, next);
+      setProductData((prev) =>
+        prev.map((p) =>
+          p.product_id === productId
+            ? { ...p, product_attributes: { ...p.product_attributes, delivery_type: next } }
+            : p
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling delivery type:", error);
+      alert("Failed to update delivery type. Please try again.");
     }
   };
 
@@ -129,6 +146,27 @@ const DeleteProducts = () => {
                 </div>
 
                 <div className="mt-2 text-gray-600">Quantity: {product.quantity}</div>
+
+                {/* Delivery type toggle */}
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Delivery:</span>
+                  <button
+                    onClick={() => handleToggleDeliveryType(
+                      product.product_id,
+                      product.product_attributes?.delivery_type || "same_day"
+                    )}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${
+                      (product.product_attributes?.delivery_type || "same_day") === "courier"
+                        ? "bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200"
+                        : "bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
+                    }`}
+                    title="Click to toggle delivery type"
+                  >
+                    {(product.product_attributes?.delivery_type || "same_day") === "courier"
+                      ? "🚚 Courier (3-5 days)"
+                      : "⚡ Same-Day"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

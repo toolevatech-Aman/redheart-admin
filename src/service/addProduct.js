@@ -42,4 +42,14 @@ export const deleteProductById = async (productId) => {
     console.error("Error deleting product:", error);
     throw error;
   }
-}
+};
+
+export const updateProductDeliveryType = async (productId, delivery_type) => {
+  try {
+    const response = await Patch(`/products/${productId}/delivery-type`, { delivery_type });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating delivery type:", error);
+    throw error;
+  }
+};
