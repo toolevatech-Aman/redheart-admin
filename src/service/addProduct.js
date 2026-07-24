@@ -1,5 +1,5 @@
 
-import { Delete, Get, Post, PostMultipart } from "./axiosService";
+import { Delete, Get, Patch, Post, PostMultipart } from "./axiosService";
 
 const buildQueryString = (params) => {
   const query = new URLSearchParams();
