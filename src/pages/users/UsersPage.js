@@ -63,7 +63,7 @@ const UsersPage = () => {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return users.filter((u) => {
+    const matches = users.filter((u) => {
       if (filter === "ordered" && !(u.orderCount > 0)) return false;
       if (filter === "not_ordered" && u.orderCount > 0) return false;
       if (filter === "cart" && !(u.cartItems?.length > 0)) return false;
@@ -78,6 +78,12 @@ const UsersPage = () => {
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
+
+    // Active cart/buy-now intent floats to the top regardless of join date —
+    // that's the signal worth acting on, and it shouldn't hide behind
+    // pagination just because the account isn't recent.
+    const hasIntent = (u) => (u.cartItems?.length > 0 || u.buyNowItem) ? 0 : 1;
+    return [...matches].sort((a, b) => hasIntent(a) - hasIntent(b));
   }, [users, search, filter]);
 
   const stats = useMemo(() => ({
