@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Search, Phone, Mail, MapPin, ChevronDown, ChevronUp, ShoppingCart,
-  Package, IndianRupee, MessageCircle, User as UserIcon, RefreshCw, Home,
+  Package, IndianRupee, MessageCircle, User as UserIcon, RefreshCw, Home, Zap,
 } from "lucide-react";
 import { Get } from "../../service/axiosService";
 
@@ -67,12 +67,14 @@ const UsersPage = () => {
       if (filter === "ordered" && !(u.orderCount > 0)) return false;
       if (filter === "not_ordered" && u.orderCount > 0) return false;
       if (filter === "cart" && !(u.cartItems?.length > 0)) return false;
+      if (filter === "buy_now" && !u.buyNowItem) return false;
       if (filter === "address" && !(u.addresses?.length > 0)) return false;
       if (!q) return true;
       const hay = [
         u.name, u.email, u.phone,
         ...(u.addresses || []).map((a) => `${a.city} ${a.street}`),
         ...(u.cartItems || []).map((c) => c.name),
+        u.buyNowItem?.name,
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
@@ -83,6 +85,7 @@ const UsersPage = () => {
     ordered: users.filter((u) => u.orderCount > 0).length,
     notOrdered: users.filter((u) => u.orderCount === 0).length,
     withCart: users.filter((u) => u.cartItems?.length > 0).length,
+    withBuyNow: users.filter((u) => u.buyNowItem).length,
     cartValue: users.reduce((sum, u) => sum + (u.cartValue || 0), 0),
   }), [users]);
 
@@ -116,12 +119,13 @@ const UsersPage = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
         {[
           { label: "Total Users",    value: stats.total,       icon: UserIcon,     color: "text-gray-700",   onClick: () => setFilter("all") },
           { label: "Ordered",        value: stats.ordered,     icon: Package,      color: "text-green-600",  onClick: () => setFilter("ordered") },
           { label: "Never Ordered",  value: stats.notOrdered,  icon: Package,      color: "text-orange-500", onClick: () => setFilter("not_ordered") },
           { label: "Active Carts",   value: stats.withCart,    icon: ShoppingCart, color: "text-blue-600",   onClick: () => setFilter("cart") },
+          { label: "Buy Now Intent", value: stats.withBuyNow,  icon: Zap,          color: "text-amber-500",  onClick: () => setFilter("buy_now") },
           { label: "Cart Value",     value: inr(stats.cartValue), icon: IndianRupee, color: "text-emerald-600", onClick: () => setFilter("cart") },
         ].map(({ label, value, icon: Icon, color, onClick }) => (
           <button key={label} onClick={onClick}
@@ -154,6 +158,7 @@ const UsersPage = () => {
           <option value="ordered">Ordered</option>
           <option value="not_ordered">Never Ordered</option>
           <option value="cart">Has Items in Cart</option>
+          <option value="buy_now">Has Buy Now Intent</option>
           <option value="address">Has Saved Address</option>
         </select>
       </div>
@@ -167,6 +172,7 @@ const UsersPage = () => {
         filtered.slice(0, visible).map((u) => {
           const isExpanded = expanded.includes(u._id);
           const hasCart = u.cartItems?.length > 0;
+          const hasBuyNow = !!u.buyNowItem;
           const hasAddr = u.addresses?.length > 0;
 
           return (
@@ -215,6 +221,11 @@ const UsersPage = () => {
                       <ShoppingCart className="w-3 h-3" /> {u.cartItems.length} in cart
                     </span>
                   )}
+                  {hasBuyNow && (
+                    <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                      <Zap className="w-3 h-3" /> Buy Now
+                    </span>
+                  )}
                   {u.totalSpent > 0 && (
                     <span className="text-sm font-bold text-gray-900">{inr(u.totalSpent)}</span>
                   )}
@@ -261,6 +272,33 @@ const UsersPage = () => {
                           <span>Cart value</span><span>{inr(u.cartValue)}</span>
                         </div>
                       </div>
+                    )}
+
+                    {hasBuyNow && (
+                      <>
+                        <h4 className="font-semibold text-gray-800 mt-4 mb-2 flex items-center gap-1.5">
+                          <Zap className="w-4 h-4 text-amber-500" /> Buy Now Selection
+                        </h4>
+                        <div className="flex items-center gap-3">
+                          <a href={u.buyNowItem.product_url || u.buyNowItem.image_url} target="_blank" rel="noopener noreferrer">
+                            <img src={u.buyNowItem.image_url} alt={u.buyNowItem.name}
+                              className="w-11 h-11 rounded-lg object-cover border border-gray-200 hover:opacity-80" />
+                          </a>
+                          <div className="min-w-0 flex-1">
+                            {u.buyNowItem.product_url ? (
+                              <a href={u.buyNowItem.product_url} target="_blank" rel="noopener noreferrer"
+                                className="font-medium text-gray-900 hover:text-red-600 hover:underline truncate block">
+                                {u.buyNowItem.name}
+                              </a>
+                            ) : (
+                              <p className="font-medium text-gray-900 truncate">{u.buyNowItem.name}</p>
+                            )}
+                            <p className="text-xs text-gray-500">
+                              {u.buyNowItem.variant_name ? `${u.buyNowItem.variant_name} · ` : ""}{inr(u.buyNowItem.selling_price)}
+                            </p>
+                          </div>
+                        </div>
+                      </>
                     )}
 
                     {u.lastOrder && (
