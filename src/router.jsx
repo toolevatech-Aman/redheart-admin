@@ -4,6 +4,9 @@ import AppLayout from "./comman/app-layout/app-layout";
 import AdminPageContentEditor from "./pages/pageContent/pageContent";
 import OrderPage from "./pages/orders/order";
 import UsersPage from "./pages/users/UsersPage";
+import SurpriseOrdersPage from "./pages/surpriseOrders/SurpriseOrdersPage";
+import ShayariReviewPage from "./pages/shayariReview/ShayariReviewPage";
+import SubscribersPage from "./pages/subscribers/SubscribersPage";
 
 // ── Existing pages ────────────────────────────────────────────────────────────
 const Home            = lazy(() => import("./pages/home/home"));
@@ -63,6 +66,9 @@ const Router = () => {
     { path: "/category-config",  element: <CategoryConfigManager />, protected: true },
     { path: "/orders",        element: <OrderPage />,           protected: true },
     { path: "/users",         element: <UsersPage />,           protected: true },
+    { path: "/surprise-orders", element: <SurpriseOrdersPage />, protected: true },
+    { path: "/shayari-review",  element: <ShayariReviewPage />,  protected: true },
+    { path: "/subscribers",     element: <SubscribersPage />,    protected: true },
     // ── Bulk Upload ──
     { path: "/upload/flowers", element: <FlowersUpload />, protected: true },
     { path: "/upload/cakes",   element: <CakesUpload />,   protected: true },

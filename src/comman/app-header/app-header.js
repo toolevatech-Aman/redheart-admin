@@ -63,6 +63,9 @@ const NAV = [
   { label: "Category Config", path: "/category-config" },
   { label: "Orders",          path: "/orders"          },
   { label: "Users",           path: "/users"           },
+  { label: "Surprise Orders", path: "/surprise-orders" },
+  { label: "Shayari Review",  path: "/shayari-review"  },
+  { label: "Shayari Orders",  path: "/subscribers"     },
 ];
 
 // ── Dropdown component ────────────────────────────────────────────────────────
