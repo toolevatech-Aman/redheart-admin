@@ -1,9 +1,32 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, Phone, Mail, MapPin, Copy, Check, ChevronDown, ChevronUp,
-  Package, IndianRupee, Truck, Clock, RefreshCw, MessageCircle, User,
+  Package, IndianRupee, Truck, Clock, RefreshCw, MessageCircle, User, Bell, BellOff, X,
 } from "lucide-react";
 import { fetchAllOrdersAdmin, updateOrderStatusAdmin } from "../../service/order";
+
+const POLL_MS = 20000;
+
+// Two-note chime synthesized via Web Audio API — no external sound file to host.
+function playChime(ctx) {
+  if (!ctx) return;
+  try {
+    const now = ctx.currentTime;
+    [660, 880].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const t = now + i * 0.15;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.36);
+    });
+  } catch { /* ignore — audio isn't critical */ }
+}
 
 const STATUS_OPTIONS = ["Pending", "Accepted", "InTransit", "Out Of Delivery", "Delivered", "Cancelled"];
 
@@ -80,21 +103,60 @@ const AdminOrdersFull = () => {
   const [payFilter, setPayFilter]     = useState("All");
   const [visible, setVisible]         = useState(PAGE_SIZE);
 
-  const fetchOrders = async () => {
-    setLoading(true);
+  // New-order alerts (toast + chime)
+  const [toasts, setToasts]           = useState([]);
+  const [soundOn, setSoundOn]         = useState(true);
+  const seenIdsRef  = useRef(null); // null until first load, so existing orders never alert
+  const audioCtxRef = useRef(null);
+  const soundOnRef  = useRef(true); // mirrors soundOn — the poll interval's closure would otherwise never see toggle updates
+  useEffect(() => { soundOnRef.current = soundOn; }, [soundOn]);
+
+  const pushToast = (order) => {
+    const id = order._id || Math.random();
+    setToasts((prev) => [...prev, { id, order }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 8000);
+  };
+  const dismissToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id));
+
+  const fetchOrders = async (isPoll = false) => {
+    if (!isPoll) setLoading(true);
     setError(null);
     try {
       const response = await fetchAllOrdersAdmin();
-      if (response.success) setOrders(response.data);
-      else setError("Failed to fetch orders");
+      if (response.success) {
+        const incoming = response.data;
+        if (seenIdsRef.current) {
+          const newOnes = incoming.filter((o) => !seenIdsRef.current.has(o._id));
+          if (newOnes.length > 0) {
+            newOnes.forEach(pushToast);
+            if (soundOnRef.current) playChime(audioCtxRef.current);
+          }
+        }
+        seenIdsRef.current = new Set(incoming.map((o) => o._id));
+        setOrders(incoming);
+      } else setError("Failed to fetch orders");
     } catch (err) {
       console.error(err);
       setError("Something went wrong while fetching orders");
     }
-    setLoading(false);
+    if (!isPoll) setLoading(false);
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => {
+    fetchOrders();
+    // Unlock the AudioContext on the first user gesture — browsers block audio
+    // that isn't triggered by interaction until then.
+    const unlock = () => {
+      if (!audioCtxRef.current) {
+        try { audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)(); } catch { /* ignore */ }
+      }
+      document.removeEventListener("click", unlock);
+    };
+    document.addEventListener("click", unlock);
+
+    const interval = setInterval(() => fetchOrders(true), POLL_MS);
+    return () => { clearInterval(interval); document.removeEventListener("click", unlock); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStatusChange = async (orderId, newStatus) => {
     setUpdatingId(orderId);
@@ -168,21 +230,50 @@ const AdminOrdersFull = () => {
     return (
       <div className="max-w-lg mx-auto mt-16 p-6 bg-red-50 border border-red-200 rounded-xl text-center">
         <p className="text-red-700 mb-4">{error}</p>
-        <button onClick={fetchOrders} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Retry</button>
+        <button onClick={() => fetchOrders()} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Retry</button>
       </div>
     );
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
+      {/* New-order toast stack */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80">
+        {toasts.map(({ id, order }) => (
+          <div key={id} className="bg-white border-2 border-rose-200 rounded-xl shadow-lg p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 text-rose-600 font-bold text-sm">
+                <Bell className="w-4 h-4" /> New Order!
+              </div>
+              <button onClick={() => dismissToast(id)} className="text-gray-400 hover:text-gray-700">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-sm font-mono text-gray-800 mt-1">{order.orderId}</p>
+            <p className="text-sm text-gray-600">
+              {order.shippingAddress?.firstName || order.user?.name || "Customer"} · {inr(order.totalPrice)}
+            </p>
+          </div>
+        ))}
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-2xl font-bold text-gray-900">Orders</h2>
-        <button
-          onClick={fetchOrders}
-          className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          <RefreshCw className="w-4 h-4" /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSoundOn((v) => !v)}
+            title={soundOn ? "New-order sound alert: on" : "New-order sound alert: off"}
+            className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg ${soundOn ? "border-rose-200 bg-rose-50 text-rose-600" : "border-gray-300 hover:bg-gray-50"}`}
+          >
+            {soundOn ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+          </button>
+          <button
+            onClick={() => fetchOrders()}
+            className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            <RefreshCw className="w-4 h-4" /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
