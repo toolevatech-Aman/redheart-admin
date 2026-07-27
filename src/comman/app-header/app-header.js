@@ -66,6 +66,7 @@ const NAV = [
   { label: "Surprise Orders", path: "/surprise-orders" },
   { label: "Shayari Review",  path: "/shayari-review"  },
   { label: "Shayari Orders",  path: "/subscribers"     },
+  { label: "Analytics",       path: "/analytics"       },
 ];
 
 // ── Dropdown component ────────────────────────────────────────────────────────
