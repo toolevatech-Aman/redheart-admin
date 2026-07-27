@@ -22,15 +22,23 @@ function buildJsonLd(faqs) {
   );
 }
 
+const inr = (n) => (n == null ? null : `₹${Number(n).toLocaleString("en-IN")}`);
+
 // ── Drag-and-drop list item ────────────────────────────────────────────────────
 function SortableItem({ item, index, onDragStart, onDragOver, onDrop, onRemove, isPinned }) {
+  const price    = inr(item.price);
+  const original = item.originalPrice && item.originalPrice !== item.price ? inr(item.originalPrice) : null;
+  const variants = item.variants || [];
+  const shownVariants = variants.slice(0, 2);
+  const extraVariants = variants.length - shownVariants.length;
+
   return (
     <div
       draggable
       onDragStart={() => onDragStart(index)}
       onDragOver={(e) => { e.preventDefault(); onDragOver(index); }}
       onDrop={() => onDrop(index)}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors cursor-grab active:cursor-grabbing select-none
+      className={`flex items-center gap-4 px-4 py-3 rounded-xl border transition-colors cursor-grab active:cursor-grabbing select-none
         ${isPinned ? "border-red-200 bg-red-50" : "border-gray-200 bg-white hover:bg-gray-50"}`}
     >
       {/* Drag handle */}
@@ -40,29 +48,49 @@ function SortableItem({ item, index, onDragStart, onDragOver, onDrop, onRemove, 
         </svg>
       </span>
       {/* Position badge */}
-      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
+      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
         ${isPinned ? "bg-red-600 text-white" : "bg-gray-200 text-gray-600"}`}>
         {index + 1}
       </span>
       {/* Image */}
       {item.image && (
-        <img src={item.image} alt="" className="w-9 h-9 rounded object-cover flex-shrink-0" />
+        <img src={item.image} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-gray-100" />
       )}
-      {/* Name + category */}
+      {/* Name + details */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
-        <p className="text-xs text-gray-400">{item.category}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
+          {isPinned && (
+            <span className="text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded flex-shrink-0">PINNED</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap mt-1">
+          {item.category && (
+            <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{item.category}</span>
+          )}
+          {item.subcategory && (
+            <span className="text-[11px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{item.subcategory}</span>
+          )}
+          {shownVariants.map((v, i) => (
+            <span key={i} className="text-[11px] text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">{v}</span>
+          ))}
+          {extraVariants > 0 && (
+            <span className="text-[11px] text-gray-400">+{extraVariants} more</span>
+          )}
+        </div>
+        {item.sku && <p className="text-[11px] text-gray-400 font-mono mt-1">SKU: {item.sku}</p>}
       </div>
-      {/* Pin indicator */}
-      {isPinned && (
-        <span className="text-xs font-semibold text-red-500 flex-shrink-0">PINNED</span>
-      )}
+      {/* Price */}
+      <div className="text-right flex-shrink-0">
+        {price && <p className="text-sm font-bold text-gray-900">{price}</p>}
+        {original && <p className="text-xs text-gray-400 line-through">{original}</p>}
+      </div>
       {/* Remove from sequence */}
       <button
         type="button"
         onClick={() => onRemove(item.productId)}
         title="Remove from sequence"
-        className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 text-lg leading-none"
+        className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 text-xl leading-none"
       >
         ×
       </button>
@@ -129,10 +157,15 @@ const CategorySeoModal = ({ page, onClose, onSave }) => {
 
       // Convert all products to sequencer items
       const toItem = (p, overrideName) => ({
-        productId: p._id?.toString() || p.productId,
-        name:      p.name || overrideName || "",
-        image:     p.media?.primary_image_url || p.image || "",
-        category:  p.categorization?.category_name || "",
+        productId:     p._id?.toString() || p.productId,
+        name:          p.name || overrideName || "",
+        image:         p.media?.primary_image_url || p.image || "",
+        category:      p.categorization?.category_name || "",
+        subcategory:   p.categorization?.subcategory_name || "",
+        price:         p.selling_price ?? null,
+        originalPrice: p.original_price ?? null,
+        sku:           p.sku || "",
+        variants:      (p.variations || []).map(v => v.variant_name).filter(Boolean),
       });
 
       // Pinned items first (by position), then rest
@@ -231,7 +264,9 @@ const CategorySeoModal = ({ page, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className={`bg-white rounded-2xl shadow-2xl w-full flex flex-col overflow-hidden transition-all duration-200 ${
+        activeTab === "sequence" ? "max-w-[96vw] h-[95vh]" : "max-w-3xl max-h-[90vh]"
+      }`}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -408,7 +443,7 @@ const CategorySeoModal = ({ page, onClose, onSave }) => {
               )}
 
               {!loadingProducts && productsLoaded && displayedSequence.length > 0 && (
-                <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 overflow-y-auto pr-1" style={{ maxHeight: "calc(95vh - 260px)" }}>
                   {displayedSequence.map((item, idx) => {
                     const realIndex = sequenced.findIndex(p => p.productId === item.productId);
                     return (
