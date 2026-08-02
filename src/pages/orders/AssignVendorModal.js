@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { X, MapPin, Star, Search, Layers, Package } from "lucide-react";
 import {
   recommendVendors, assignVendorToOrder, assignVendorToOrderItem,
-  fetchVendors, createVendor, fetchPinCodeStat,
+  fetchVendors, createVendor, fetchPinCodeStat, updateOrderVendorCost, updateOrderItemVendorCost,
 } from "../../service/vendors";
 
 const CONFIDENCE_STYLES = {
@@ -106,10 +106,7 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
 
         <div className="p-6">
           {order.vendor?.vendorId && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-              Whole order assigned to: <span className="font-semibold">{order.vendor.name}</span> ({order.vendor.phone})
-              {order.vendor.cost ? ` · ₹${order.vendor.cost}` : ""}
-            </div>
+            <CurrentVendorBanner order={order} onUpdated={onAssigned} />
           )}
 
           {items.length > 1 && (
@@ -128,9 +125,9 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
           {splitMode ? (
             <div className="space-y-3">
               {items.map((item) => (
-                <ItemAssignRow key={item._id} item={item} recs={recs} loading={loading}
+                <ItemAssignRow key={item._id} item={item} recs={recs} loading={loading} orderId={order.orderId}
                   existing={(order.itemVendors || []).find((iv) => iv.cartItemId === item._id)}
-                  onAssign={doAssignItem} />
+                  onAssign={doAssignItem} onCostUpdated={onAssigned} />
               ))}
             </div>
           ) : (
@@ -226,13 +223,34 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
 
 // One row per order item in "Split by Product" mode — pick from the same
 // location-based recommendations, or search manually, per item.
-const ItemAssignRow = ({ item, recs, loading, existing, onAssign }) => {
+const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCostUpdated }) => {
   const [expanded, setExpanded] = useState(false);
   const [cost, setCost] = useState("");
   const [deliveryCost, setDeliveryCost] = useState("");
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [assigning, setAssigning] = useState(null);
+  const [editingCost, setEditingCost] = useState(false);
+  const [editCost, setEditCost] = useState(existing?.cost ?? "");
+  const [editDeliveryCost, setEditDeliveryCost] = useState(existing?.deliveryCost ?? "");
+  const [savingCost, setSavingCost] = useState(false);
+
+  const saveCost = async () => {
+    setSavingCost(true);
+    try {
+      const updated = await updateOrderItemVendorCost(orderId, {
+        cartItemId: item._id,
+        cost: editCost === "" ? undefined : Number(editCost),
+        deliveryCost: editDeliveryCost === "" ? undefined : Number(editDeliveryCost),
+      });
+      onCostUpdated(updated);
+      setEditingCost(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update cost");
+    }
+    setSavingCost(false);
+  };
 
   const runSearch = async (q) => {
     setSearch(q);
@@ -263,13 +281,33 @@ const ItemAssignRow = ({ item, recs, loading, existing, onAssign }) => {
           <p className="text-xs text-gray-400">Qty {item.quantity} · {item.variant_name || ""}</p>
         </div>
         {existing?.vendorId ? (
-          <span className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold whitespace-nowrap">{existing.name}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold whitespace-nowrap">
+              {existing.name}{existing.cost ? ` · ₹${existing.cost}` : ""}
+            </span>
+            <button onClick={() => setEditingCost((v) => !v)} className="text-xs text-blue-600 hover:underline whitespace-nowrap">
+              {existing.cost ? "Edit" : "Add cost"}
+            </button>
+          </div>
         ) : (
           <button onClick={() => setExpanded((v) => !v)} className="px-2.5 py-1 border border-gray-300 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-gray-50">
             {expanded ? "Cancel" : "Assign"}
           </button>
         )}
       </div>
+
+      {editingCost && (
+        <div className="flex items-center gap-2 mt-2">
+          <input type="number" placeholder="Cost (₹)" value={editCost} onChange={(e) => setEditCost(e.target.value)}
+            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs" />
+          <input type="number" placeholder="Delivery (₹)" value={editDeliveryCost} onChange={(e) => setEditDeliveryCost(e.target.value)}
+            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs" />
+          <button onClick={saveCost} disabled={savingCost}
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold whitespace-nowrap">
+            {savingCost ? "…" : "Save"}
+          </button>
+        </div>
+      )}
 
       {expanded && (
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
@@ -302,6 +340,59 @@ const ItemAssignRow = ({ item, recs, loading, existing, onAssign }) => {
               </button>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Shows the currently whole-order-assigned vendor with an inline cost editor —
+// lets ops add/fix the cost on an already-assigned ("old") vendor without
+// re-searching and reassigning the same vendor.
+const CurrentVendorBanner = ({ order, onUpdated }) => {
+  const [editing, setEditing] = useState(false);
+  const [cost, setCost] = useState(order.vendor.cost ?? "");
+  const [deliveryCost, setDeliveryCost] = useState(order.vendor.deliveryCost ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await updateOrderVendorCost(order.orderId, {
+        cost: cost === "" ? undefined : Number(cost),
+        deliveryCost: deliveryCost === "" ? undefined : Number(deliveryCost),
+      });
+      onUpdated(updated);
+      setEditing(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update cost");
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span>
+          Whole order assigned to: <span className="font-semibold">{order.vendor.name}</span> ({order.vendor.phone})
+          {order.vendor.cost ? ` · ₹${order.vendor.cost}` : " · no cost entered yet"}
+        </span>
+        {!editing && (
+          <button onClick={() => setEditing(true)} className="text-xs font-semibold text-blue-700 hover:underline whitespace-nowrap">
+            {order.vendor.cost ? "Edit cost" : "Add cost"}
+          </button>
+        )}
+      </div>
+      {editing && (
+        <div className="flex items-center gap-2 mt-2">
+          <input type="number" placeholder="Total cost (₹)" value={cost} onChange={(e) => setCost(e.target.value)}
+            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs" />
+          <input type="number" placeholder="Delivery portion (₹)" value={deliveryCost} onChange={(e) => setDeliveryCost(e.target.value)}
+            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs" />
+          <button onClick={save} disabled={saving} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold whitespace-nowrap">
+            {saving ? "…" : "Save"}
+          </button>
         </div>
       )}
     </div>

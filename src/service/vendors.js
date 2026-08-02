@@ -11,3 +11,7 @@ export const assignVendorToOrder = async (orderId, data) =>
   (await Post(`/vendors/orders/${orderId}/assign`, data)).data;
 export const assignVendorToOrderItem = async (orderId, data) =>
   (await Post(`/vendors/orders/${orderId}/assign-item`, data)).data;
+export const updateOrderVendorCost = async (orderId, data) =>
+  (await Put(`/vendors/orders/${orderId}/vendor-cost`, data)).data;
+export const updateOrderItemVendorCost = async (orderId, data) =>
+  (await Put(`/vendors/orders/${orderId}/vendor-cost-item`, data)).data;
