@@ -136,7 +136,9 @@ const VendorProfilePage = () => {
           </div>
           <div className={`rounded-xl p-3 text-center ${vendor.stats?.margin >= 0 ? "bg-purple-50" : "bg-red-50"}`}>
             <p className={`text-lg font-bold ${vendor.stats?.margin >= 0 ? "text-purple-700" : "text-red-700"}`}>
-              {vendor.stats?.totalRevenue ? `₹${vendor.stats.margin.toLocaleString("en-IN")}` : "—"}
+              {vendor.stats?.totalRevenue
+                ? `₹${vendor.stats.margin.toLocaleString("en-IN")} (${((vendor.stats.margin / vendor.stats.totalRevenue) * 100).toFixed(1)}%)`
+                : "—"}
             </p>
             <p className={`text-xs mt-0.5 ${vendor.stats?.margin >= 0 ? "text-purple-500" : "text-red-500"}`}>Margin (revenue − settlement)</p>
           </div>

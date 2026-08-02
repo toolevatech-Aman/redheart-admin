@@ -164,6 +164,9 @@ const VendorsPage = () => {
                       {v.stats?.totalRevenue ? (
                         <span className={`font-semibold ${v.stats.margin >= 0 ? "text-green-600" : "text-red-600"}`}>
                           ₹{v.stats.margin.toLocaleString("en-IN")}
+                          <span className="text-xs font-normal ml-1 opacity-70">
+                            ({((v.stats.margin / v.stats.totalRevenue) * 100).toFixed(1)}%)
+                          </span>
                         </span>
                       ) : "—"}
                     </td>
