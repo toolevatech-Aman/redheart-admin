@@ -62,6 +62,7 @@ const NAV = [
   { label: "Category Pages",  path: "/category-pages"  },
   { label: "Category Config", path: "/category-config" },
   { label: "Orders",          path: "/orders"          },
+  { label: "Vendors",         path: "/vendors"         },
   { label: "Users",           path: "/users"           },
   { label: "Surprise Orders", path: "/surprise-orders" },
   { label: "Shayari Review",  path: "/shayari-review"  },

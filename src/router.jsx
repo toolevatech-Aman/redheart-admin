@@ -8,6 +8,8 @@ import SurpriseOrdersPage from "./pages/surpriseOrders/SurpriseOrdersPage";
 import ShayariReviewPage from "./pages/shayariReview/ShayariReviewPage";
 import SubscribersPage from "./pages/subscribers/SubscribersPage";
 import AnalyticsDashboard from "./pages/analytics/AnalyticsDashboard";
+import VendorsPage from "./pages/vendors/VendorsPage";
+import VendorProfilePage from "./pages/vendors/VendorProfilePage";
 
 // ── Existing pages ────────────────────────────────────────────────────────────
 const Home            = lazy(() => import("./pages/home/home"));
@@ -71,6 +73,8 @@ const Router = () => {
     { path: "/shayari-review",  element: <ShayariReviewPage />,  protected: true },
     { path: "/subscribers",     element: <SubscribersPage />,    protected: true },
     { path: "/analytics",       element: <AnalyticsDashboard />, protected: true },
+    { path: "/vendors",         element: <VendorsPage />,        protected: true },
+    { path: "/vendors/:id",     element: <VendorProfilePage />,  protected: true },
     // ── Bulk Upload ──
     { path: "/upload/flowers", element: <FlowersUpload />, protected: true },
     { path: "/upload/cakes",   element: <CakesUpload />,   protected: true },

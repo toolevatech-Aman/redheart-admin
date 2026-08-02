@@ -4,6 +4,7 @@ import {
   Package, IndianRupee, Truck, Clock, RefreshCw, MessageCircle, User, Bell, BellOff, X,
 } from "lucide-react";
 import { fetchAllOrdersAdmin, updateOrderStatusAdmin } from "../../service/order";
+import AssignVendorModal from "./AssignVendorModal";
 
 const POLL_MS = 20000;
 
@@ -96,6 +97,7 @@ const AdminOrdersFull = () => {
   const [updatingId, setUpdatingId]   = useState(null);
   const [expanded, setExpanded]       = useState([]);
   const [copiedId, setCopiedId]       = useState(null);
+  const [vendorModalOrder, setVendorModalOrder] = useState(null);
 
   // Filters
   const [query, setQuery]             = useState("");
@@ -443,6 +445,12 @@ const AdminOrdersFull = () => {
                       {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                     {updatingId === order.orderId && <span className="text-xs text-gray-400">Updating…</span>}
+                    <button onClick={() => setVendorModalOrder(order)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border
+                        ${order.vendor?.vendorId ? "border-green-200 bg-green-50 text-green-700" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+                      <Truck className="w-3.5 h-3.5" />
+                      {order.vendor?.vendorId ? order.vendor.name : "Assign Vendor"}
+                    </button>
                   </div>
                   <button onClick={() => toggle(order._id)}
                     className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
@@ -522,6 +530,17 @@ const AdminOrdersFull = () => {
             Load more ({filtered.length - visible} remaining)
           </button>
         </div>
+      )}
+
+      {vendorModalOrder && (
+        <AssignVendorModal
+          order={vendorModalOrder}
+          onClose={() => setVendorModalOrder(null)}
+          onAssigned={(updatedOrder) => {
+            setOrders((prev) => prev.map((o) => (o.orderId === updatedOrder.orderId ? { ...o, vendor: updatedOrder.vendor } : o)));
+            setVendorModalOrder(null);
+          }}
+        />
       )}
     </div>
   );
