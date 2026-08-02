@@ -19,6 +19,7 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [pinStat, setPinStat] = useState(null);
   const [splitMode, setSplitMode] = useState(false);
+  const [lastVendor, setLastVendor] = useState(null); // { id, name } — last vendor assigned to an item, for quick reuse
 
   // Whole-order assignment state
   const [cost, setCost] = useState({});
@@ -73,13 +74,14 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
     setAssigning(null);
   };
 
-  const doAssignItem = async (cartItemId, vendorId, itemCost, itemDeliveryCost) => {
+  const doAssignItem = async (cartItemId, vendorId, itemCost, itemDeliveryCost, vendorName) => {
     const updated = await assignVendorToOrderItem(order.orderId, {
       cartItemId, vendorId,
       cost: itemCost ? Number(itemCost) : undefined,
       deliveryCost: itemDeliveryCost ? Number(itemDeliveryCost) : undefined,
     });
     onAssigned(updated);
+    if (vendorName) setLastVendor({ id: vendorId, name: vendorName });
     return updated;
   };
 
@@ -124,10 +126,16 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
 
           {splitMode ? (
             <div className="space-y-3">
+              {items.length > 1 && (
+                <p className="text-xs text-gray-400">
+                  Assigning the same vendor to multiple products? Assign the first one below, then use
+                  {" "}<span className="font-semibold text-gray-600">"Use {lastVendor?.name || "same vendor"} here"</span> on the rest — each item still gets its own cost.
+                </p>
+              )}
               {items.map((item) => (
                 <ItemAssignRow key={item._id} item={item} recs={recs} loading={loading} orderId={order.orderId}
                   existing={(order.itemVendors || []).find((iv) => iv.cartItemId === item._id)}
-                  onAssign={doAssignItem} onCostUpdated={onAssigned} />
+                  onAssign={doAssignItem} onCostUpdated={onAssigned} lastVendor={lastVendor} />
               ))}
             </div>
           ) : (
@@ -223,7 +231,7 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
 
 // One row per order item in "Split by Product" mode — pick from the same
 // location-based recommendations, or search manually, per item.
-const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCostUpdated }) => {
+const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCostUpdated, lastVendor }) => {
   const [expanded, setExpanded] = useState(false);
   const [cost, setCost] = useState("");
   const [deliveryCost, setDeliveryCost] = useState("");
@@ -234,6 +242,10 @@ const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCos
   const [editCost, setEditCost] = useState(existing?.cost ?? "");
   const [editDeliveryCost, setEditDeliveryCost] = useState(existing?.deliveryCost ?? "");
   const [savingCost, setSavingCost] = useState(false);
+  const [quickAssigning, setQuickAssigning] = useState(false);
+  const [quickCost, setQuickCost] = useState("");
+  const [quickDeliveryCost, setQuickDeliveryCost] = useState("");
+  const addOns = item.add_ons || [];
 
   const saveCost = async () => {
     setSavingCost(true);
@@ -261,11 +273,23 @@ const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCos
     } catch (err) { console.error(err); }
   };
 
-  const assign = async (vendorId) => {
+  const assign = async (vendorId, vendorName) => {
     setAssigning(vendorId);
     try {
-      await onAssign(item._id, vendorId, cost, deliveryCost);
+      await onAssign(item._id, vendorId, cost, deliveryCost, vendorName);
       setExpanded(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to assign vendor for this item");
+    }
+    setAssigning(null);
+  };
+
+  const quickAssign = async () => {
+    setAssigning(lastVendor.id);
+    try {
+      await onAssign(item._id, lastVendor.id, quickCost, quickDeliveryCost, lastVendor.name);
+      setQuickAssigning(false);
     } catch (err) {
       console.error(err);
       alert("Failed to assign vendor for this item");
@@ -279,6 +303,11 @@ const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCos
         <div className="min-w-0">
           <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
           <p className="text-xs text-gray-400">Qty {item.quantity} · {item.variant_name || ""}</p>
+          {addOns.length > 0 && (
+            <p className="text-[11px] text-purple-500 mt-0.5">
+              + {addOns.map((a) => `${a.name} ×${a.quantity || 1}`).join(", ")}
+            </p>
+          )}
         </div>
         {existing?.vendorId ? (
           <div className="flex items-center gap-1.5">
@@ -290,11 +319,31 @@ const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCos
             </button>
           </div>
         ) : (
-          <button onClick={() => setExpanded((v) => !v)} className="px-2.5 py-1 border border-gray-300 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-gray-50">
-            {expanded ? "Cancel" : "Assign"}
-          </button>
+          <div className="flex items-center gap-1.5">
+            {lastVendor && (
+              <button onClick={() => setQuickAssigning((v) => !v)} className="px-2.5 py-1 border border-blue-200 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-blue-100">
+                Use {lastVendor.name} here
+              </button>
+            )}
+            <button onClick={() => setExpanded((v) => !v)} className="px-2.5 py-1 border border-gray-300 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-gray-50">
+              {expanded ? "Cancel" : "Assign"}
+            </button>
+          </div>
         )}
       </div>
+
+      {quickAssigning && (
+        <div className="flex items-center gap-2 mt-2">
+          <input type="number" placeholder="Cost (₹)" value={quickCost} onChange={(e) => setQuickCost(e.target.value)}
+            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs" />
+          <input type="number" placeholder="Delivery (₹)" value={quickDeliveryCost} onChange={(e) => setQuickDeliveryCost(e.target.value)}
+            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs" />
+          <button onClick={quickAssign} disabled={assigning === lastVendor?.id}
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold whitespace-nowrap">
+            {assigning === lastVendor?.id ? "…" : "Assign"}
+          </button>
+        </div>
+      )}
 
       {editingCost && (
         <div className="flex items-center gap-2 mt-2">
@@ -321,7 +370,7 @@ const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCos
           {!loading && recs.slice(0, 3).map((r) => (
             <div key={r.vendor._id} className="flex items-center justify-between text-xs py-1">
               <span>{r.vendor.name} <span className="text-gray-400">({r.matchTier}, {r.confidence})</span></span>
-              <button onClick={() => assign(r.vendor._id)} disabled={assigning === r.vendor._id}
+              <button onClick={() => assign(r.vendor._id, r.vendor.name)} disabled={assigning === r.vendor._id}
                 className="px-2 py-1 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg font-semibold">
                 {assigning === r.vendor._id ? "…" : "Assign"}
               </button>
@@ -334,7 +383,7 @@ const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCos
           {results.map((v) => (
             <div key={v._id} className="flex items-center justify-between text-xs py-1">
               <span>{v.name} <span className="text-gray-400">({v.city})</span></span>
-              <button onClick={() => assign(v._id)} disabled={assigning === v._id}
+              <button onClick={() => assign(v._id, v.name)} disabled={assigning === v._id}
                 className="px-2 py-1 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg font-semibold">
                 {assigning === v._id ? "…" : "Assign"}
               </button>
