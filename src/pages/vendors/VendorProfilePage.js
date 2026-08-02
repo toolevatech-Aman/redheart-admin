@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Phone, MapPin, Save, RefreshCw, Ban, CheckCircle2, Plus, Trash2, X } from "lucide-react";
 import { fetchVendorProfile, updateVendor, deactivateVendor } from "../../service/vendors";
 
+const PRODUCTS = ["flowers", "cakes", "plants", "gifts"];
+
 const fmtDate = (d) => {
   if (!d) return "—";
   const date = new Date(d);
@@ -23,6 +25,8 @@ const VendorProfilePage = () => {
   const [pinCodes, setPinCodes] = useState([]);
   const [pinCodeInput, setPinCodeInput] = useState("");
   const [savingCoverage, setSavingCoverage] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [savingProducts, setSavingProducts] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -33,6 +37,7 @@ const VendorProfilePage = () => {
       setNotes(data.vendor.notes || "");
       setPricingRows(data.vendor.pricingTable?.length ? data.vendor.pricingTable : [{ productName: "", charge: "" }]);
       setPinCodes(data.vendor.pinCodes || []);
+      setProducts(data.vendor.products || []);
     } catch (err) {
       console.error(err);
     }
@@ -83,6 +88,17 @@ const VendorProfilePage = () => {
       setPinCodes(updated.pinCodes || []);
     } catch (err) { console.error(err); }
     setSavingCoverage(false);
+  };
+
+  const toggleProduct = (p) => setProducts((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
+  const saveProducts = async () => {
+    setSavingProducts(true);
+    try {
+      const updated = await updateVendor(id, { products });
+      setVendor(updated);
+      setProducts(updated.products || []);
+    } catch (err) { console.error(err); }
+    setSavingProducts(false);
   };
 
   const toggleStatus = async () => {
@@ -205,10 +221,18 @@ const VendorProfilePage = () => {
 
         <div className="mt-6">
           <p className="text-xs font-semibold text-gray-500 mb-1.5">Products Offered</p>
-          <div className="flex flex-wrap gap-1.5">
-            {(vendor.products || []).length ? vendor.products.map((p) => (
-              <span key={p} className="px-2 py-1 bg-purple-50 text-purple-600 rounded-full text-xs capitalize">{p}</span>
-            )) : <span className="text-xs text-gray-400">None specified</span>}
+          <div className="flex flex-wrap items-center gap-2">
+            {PRODUCTS.map((p) => (
+              <button key={p} type="button" onClick={() => toggleProduct(p)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border capitalize transition
+                  ${products.includes(p) ? "bg-purple-600 text-white border-purple-600" : "bg-white text-gray-600 border-gray-300"}`}>
+                {p}
+              </button>
+            ))}
+            <button onClick={saveProducts} disabled={savingProducts}
+              className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold whitespace-nowrap ml-1">
+              <Save className="w-3.5 h-3.5" /> {savingProducts ? "Saving…" : "Save"}
+            </button>
           </div>
         </div>
 
