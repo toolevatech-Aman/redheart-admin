@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, MapPin, Save, RefreshCw, Ban, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Phone, MapPin, Save, RefreshCw, Ban, CheckCircle2, Plus, Trash2, X } from "lucide-react";
 import { fetchVendorProfile, updateVendor, deactivateVendor } from "../../service/vendors";
 
 const fmtDate = (d) => {
@@ -20,6 +20,9 @@ const VendorProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [pricingRows, setPricingRows] = useState([]);
   const [savingPricing, setSavingPricing] = useState(false);
+  const [pinCodes, setPinCodes] = useState([]);
+  const [pinCodeInput, setPinCodeInput] = useState("");
+  const [savingCoverage, setSavingCoverage] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -29,6 +32,7 @@ const VendorProfilePage = () => {
       setOrders(data.orders || []);
       setNotes(data.vendor.notes || "");
       setPricingRows(data.vendor.pricingTable?.length ? data.vendor.pricingTable : [{ productName: "", charge: "" }]);
+      setPinCodes(data.vendor.pinCodes || []);
     } catch (err) {
       console.error(err);
     }
@@ -62,6 +66,23 @@ const VendorProfilePage = () => {
       setPricingRows(cleaned.length ? cleaned : [{ productName: "", charge: "" }]);
     } catch (err) { console.error(err); }
     setSavingPricing(false);
+  };
+
+  const addPinCode = () => {
+    const code = pinCodeInput.trim();
+    if (!code || pinCodes.includes(code)) return setPinCodeInput("");
+    setPinCodes((prev) => [...prev, code]);
+    setPinCodeInput("");
+  };
+  const removePinCode = (code) => setPinCodes((prev) => prev.filter((c) => c !== code));
+  const saveCoverage = async () => {
+    setSavingCoverage(true);
+    try {
+      const updated = await updateVendor(id, { pinCodes });
+      setVendor(updated);
+      setPinCodes(updated.pinCodes || []);
+    } catch (err) { console.error(err); }
+    setSavingCoverage(false);
   };
 
   const toggleStatus = async () => {
@@ -155,10 +176,29 @@ const VendorProfilePage = () => {
           </div>
           <div>
             <p className="text-xs font-semibold text-gray-500 mb-1.5">Pin Codes Served</p>
-            <div className="flex flex-wrap gap-1.5">
-              {(vendor.pinCodes || []).length ? vendor.pinCodes.map((p) => (
-                <span key={p} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-full text-xs">{p}</span>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {pinCodes.length ? pinCodes.map((p) => (
+                <span key={p} className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-full text-xs">
+                  {p}
+                  <button onClick={() => removePinCode(p)} className="hover:text-blue-900"><X className="w-3 h-3" /></button>
+                </span>
               )) : <span className="text-xs text-gray-400">None specified</span>}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={pinCodeInput}
+                onChange={(e) => setPinCodeInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPinCode(); } }}
+                placeholder="Add pin code…"
+                className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-xs"
+              />
+              <button onClick={addPinCode} className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs hover:bg-gray-50">
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={saveCoverage} disabled={savingCoverage}
+                className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold whitespace-nowrap">
+                <Save className="w-3.5 h-3.5" /> {savingCoverage ? "Saving…" : "Save"}
+              </button>
             </div>
           </div>
         </div>
