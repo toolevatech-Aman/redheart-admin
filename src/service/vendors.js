@@ -9,3 +9,5 @@ export const recommendVendors = async (params) => (await Get("/vendors/recommend
 export const fetchPinCodeStat = async (pinCode) => (await Get("/vendors/pincode-stats", { pinCode })).data;
 export const assignVendorToOrder = async (orderId, data) =>
   (await Post(`/vendors/orders/${orderId}/assign`, data)).data;
+export const assignVendorToOrderItem = async (orderId, data) =>
+  (await Post(`/vendors/orders/${orderId}/assign-item`, data)).data;

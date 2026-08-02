@@ -445,12 +445,24 @@ const AdminOrdersFull = () => {
                       {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                     {updatingId === order.orderId && <span className="text-xs text-gray-400">Updating…</span>}
-                    <button onClick={() => setVendorModalOrder(order)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border
-                        ${order.vendor?.vendorId ? "border-green-200 bg-green-50 text-green-700" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
-                      <Truck className="w-3.5 h-3.5" />
-                      {order.vendor?.vendorId ? order.vendor.name : "Assign Vendor"}
-                    </button>
+                    {(() => {
+                      const assignedItems = (order.itemVendors || []).filter((iv) => iv.vendorId).length;
+                      const totalItems = (order.cartItems || []).length;
+                      const hasWholeOrder = !!order.vendor?.vendorId;
+                      const hasSplit = assignedItems > 0;
+                      const label = hasWholeOrder ? order.vendor.name
+                        : hasSplit ? `${assignedItems}/${totalItems} items assigned`
+                        : "Assign Vendor";
+                      const isDone = hasWholeOrder || (hasSplit && assignedItems === totalItems);
+                      return (
+                        <button onClick={() => setVendorModalOrder(order)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border
+                            ${isDone ? "border-green-200 bg-green-50 text-green-700" : hasSplit ? "border-amber-200 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+                          <Truck className="w-3.5 h-3.5" />
+                          {label}
+                        </button>
+                      );
+                    })()}
                   </div>
                   <button onClick={() => toggle(order._id)}
                     className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
@@ -537,8 +549,10 @@ const AdminOrdersFull = () => {
           order={vendorModalOrder}
           onClose={() => setVendorModalOrder(null)}
           onAssigned={(updatedOrder) => {
-            setOrders((prev) => prev.map((o) => (o.orderId === updatedOrder.orderId ? { ...o, vendor: updatedOrder.vendor } : o)));
-            setVendorModalOrder(null);
+            setOrders((prev) => prev.map((o) => (o.orderId === updatedOrder.orderId
+              ? { ...o, vendor: updatedOrder.vendor, itemVendors: updatedOrder.itemVendors }
+              : o)));
+            setVendorModalOrder((prev) => (prev ? { ...prev, vendor: updatedOrder.vendor, itemVendors: updatedOrder.itemVendors } : prev));
           }}
         />
       )}
