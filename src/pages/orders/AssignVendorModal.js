@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X, MapPin, Star, Search } from "lucide-react";
-import { recommendVendors, assignVendorToOrder, fetchVendors, createVendor } from "../../service/vendors";
+import { recommendVendors, assignVendorToOrder, fetchVendors, createVendor, fetchPinCodeStat } from "../../service/vendors";
 
 const CONFIDENCE_STYLES = {
   High:   "bg-green-100 text-green-700",
@@ -18,6 +18,7 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
   const [assigning, setAssigning] = useState(null); // vendorId being assigned
   const [cost, setCost] = useState({}); // vendorId -> cost input
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [pinStat, setPinStat] = useState(null);
 
   const city = order.shippingAddress?.city || "";
   const region = order.shippingAddress?.state || "";
@@ -33,7 +34,10 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load();
+    if (pinCode) fetchPinCodeStat(pinCode).then(setPinStat).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const runManualSearch = async (q) => {
     setManualSearch(q);
@@ -68,6 +72,9 @@ const AssignVendorModal = ({ order, onClose, onAssigned }) => {
             <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3" /> {city}{region ? `, ${region}` : ""} {pinCode && `· ${pinCode}`}
             </p>
+            {pinStat?.orderCount > 0 && (
+              <p className="text-xs text-amber-600 mt-1">Avg delivery cost in {pinCode}: ₹{pinStat.avgCost} (from {pinStat.orderCount} order{pinStat.orderCount > 1 ? "s" : ""})</p>
+            )}
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
         </div>

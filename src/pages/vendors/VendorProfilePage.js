@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, MapPin, Save, RefreshCw, Ban, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Phone, MapPin, Save, RefreshCw, Ban, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import { fetchVendorProfile, updateVendor, deactivateVendor } from "../../service/vendors";
 
 const fmtDate = (d) => {
@@ -18,6 +18,8 @@ const VendorProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [pricingRows, setPricingRows] = useState([]);
+  const [savingPricing, setSavingPricing] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -26,6 +28,7 @@ const VendorProfilePage = () => {
       setVendor(data.vendor);
       setOrders(data.orders || []);
       setNotes(data.vendor.notes || "");
+      setPricingRows(data.vendor.pricingTable?.length ? data.vendor.pricingTable : [{ productName: "", charge: "" }]);
     } catch (err) {
       console.error(err);
     }
@@ -41,6 +44,24 @@ const VendorProfilePage = () => {
       setVendor(updated);
     } catch (err) { console.error(err); }
     setSaving(false);
+  };
+
+  const updatePricingRow = (idx, field, value) =>
+    setPricingRows((rows) => rows.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
+  const addPricingRow = () => setPricingRows((rows) => [...rows, { productName: "", charge: "" }]);
+  const removePricingRow = (idx) => setPricingRows((rows) => rows.filter((_, i) => i !== idx));
+
+  const savePricingTable = async () => {
+    setSavingPricing(true);
+    try {
+      const cleaned = pricingRows
+        .filter((r) => r.productName?.trim())
+        .map((r) => ({ productName: r.productName.trim(), charge: Number(r.charge) || 0 }));
+      const updated = await updateVendor(id, { pricingTable: cleaned });
+      setVendor(updated);
+      setPricingRows(cleaned.length ? cleaned : [{ productName: "", charge: "" }]);
+    } catch (err) { console.error(err); }
+    setSavingPricing(false);
   };
 
   const toggleStatus = async () => {
@@ -94,7 +115,6 @@ const VendorProfilePage = () => {
           {[
             { label: "Total Orders", value: vendor.stats?.totalOrders || 0 },
             { label: "Success Rate", value: vendor.stats?.totalOrders ? `${vendor.stats.successRate}%` : "—" },
-            { label: "Avg Cost", value: vendor.stats?.avgCost ? `₹${vendor.stats.avgCost}` : "—" },
             { label: "Last Order", value: fmtDate(vendor.stats?.lastOrderAt) },
           ].map((s) => (
             <div key={s.label} className="bg-gray-50 rounded-xl p-3 text-center">
@@ -102,6 +122,24 @@ const VendorProfilePage = () => {
               <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* ── Financials: what we paid the vendor vs what the order earned ── */}
+        <div className="grid grid-cols-3 gap-3 mt-3">
+          <div className="bg-blue-50 rounded-xl p-3 text-center">
+            <p className="text-lg font-bold text-blue-700">{vendor.stats?.totalCost ? `₹${vendor.stats.totalCost.toLocaleString("en-IN")}` : "—"}</p>
+            <p className="text-xs text-blue-500 mt-0.5">Total Settlement (paid to vendor)</p>
+          </div>
+          <div className="bg-emerald-50 rounded-xl p-3 text-center">
+            <p className="text-lg font-bold text-emerald-700">{vendor.stats?.totalRevenue ? `₹${vendor.stats.totalRevenue.toLocaleString("en-IN")}` : "—"}</p>
+            <p className="text-xs text-emerald-500 mt-0.5">Total Revenue (order value)</p>
+          </div>
+          <div className={`rounded-xl p-3 text-center ${vendor.stats?.margin >= 0 ? "bg-purple-50" : "bg-red-50"}`}>
+            <p className={`text-lg font-bold ${vendor.stats?.margin >= 0 ? "text-purple-700" : "text-red-700"}`}>
+              {vendor.stats?.totalRevenue ? `₹${vendor.stats.margin.toLocaleString("en-IN")}` : "—"}
+            </p>
+            <p className={`text-xs mt-0.5 ${vendor.stats?.margin >= 0 ? "text-purple-500" : "text-red-500"}`}>Margin (revenue − settlement)</p>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 mt-6">
@@ -129,6 +167,35 @@ const VendorProfilePage = () => {
             {(vendor.products || []).length ? vendor.products.map((p) => (
               <span key={p} className="px-2 py-1 bg-purple-50 text-purple-600 rounded-full text-xs capitalize">{p}</span>
             )) : <span className="text-xs text-gray-400">None specified</span>}
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <p className="text-xs font-semibold text-gray-500 mb-1.5">Product Charges (vendor's price list)</p>
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <div className="grid grid-cols-[1fr_140px_40px] gap-0 bg-gray-50 text-xs font-semibold text-gray-500 uppercase px-3 py-2">
+              <span>Product Name</span><span>Charge (INR)</span><span></span>
+            </div>
+            {pricingRows.map((row, idx) => (
+              <div key={idx} className="grid grid-cols-[1fr_140px_40px] gap-2 px-3 py-2 border-t border-gray-100 items-center">
+                <input value={row.productName} onChange={(e) => updatePricingRow(idx, "productName", e.target.value)}
+                  placeholder="e.g. Red Rose Bouquet" className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                <input type="number" value={row.charge} onChange={(e) => updatePricingRow(idx, "charge", e.target.value)}
+                  placeholder="₹" className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                <button onClick={() => removePricingRow(idx)} className="text-gray-400 hover:text-red-600 justify-self-center">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <button onClick={addPricingRow} className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50">
+              <Plus className="w-3.5 h-3.5" /> Add Row
+            </button>
+            <button onClick={savePricingTable} disabled={savingPricing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg font-semibold">
+              <Save className="w-3.5 h-3.5" /> {savingPricing ? "Saving…" : "Save Price List"}
+            </button>
           </div>
         </div>
 

@@ -130,7 +130,8 @@ const VendorsPage = () => {
                   <th className="px-5 py-3">Products</th>
                   <th className="px-5 py-3">Orders</th>
                   <th className="px-5 py-3">Success</th>
-                  <th className="px-5 py-3">Avg Cost</th>
+                  <th className="px-5 py-3">Settlement</th>
+                  <th className="px-5 py-3">Margin</th>
                   <th className="px-5 py-3">Last Order</th>
                   <th className="px-5 py-3">Status</th>
                 </tr>
@@ -158,7 +159,14 @@ const VendorsPage = () => {
                         </span>
                       ) : "—"}
                     </td>
-                    <td className="px-5 py-3 text-gray-600">{v.stats?.avgCost ? `₹${v.stats.avgCost}` : "—"}</td>
+                    <td className="px-5 py-3 text-gray-600">{v.stats?.totalCost ? `₹${v.stats.totalCost.toLocaleString("en-IN")}` : "—"}</td>
+                    <td className="px-5 py-3">
+                      {v.stats?.totalRevenue ? (
+                        <span className={`font-semibold ${v.stats.margin >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          ₹{v.stats.margin.toLocaleString("en-IN")}
+                        </span>
+                      ) : "—"}
+                    </td>
                     <td className="px-5 py-3 text-gray-400 text-xs whitespace-nowrap">{fmtDate(v.stats?.lastOrderAt)}</td>
                     <td className="px-5 py-3">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${v.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
