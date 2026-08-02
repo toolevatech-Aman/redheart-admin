@@ -423,7 +423,7 @@ function MarginView({ data, loading, error, onRetry }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard label="Costed Revenue" value={inr(s?.totalRevenue)} icon={IndianRupee} color="text-gray-700" sub={`${s?.costedOrders ?? 0} orders with a vendor cost`} />
         <StatCard label="Total Vendor Cost" value={inr(s?.totalCost)} icon={IndianRupee} color="text-red-500" />
-        <StatCard label="Total Margin" value={inr(s?.totalMargin)} icon={PiggyBank} color={s?.totalMargin >= 0 ? "text-emerald-600" : "text-red-600"} />
+        <StatCard label="Total Margin" value={`${inr(s?.totalMargin)} (${pct(s?.marginPercent)})`} icon={PiggyBank} color={s?.totalMargin >= 0 ? "text-emerald-600" : "text-red-600"} />
         <StatCard label="Margin %" value={pct(s?.marginPercent)} icon={TrendingUp} color={s?.marginPercent >= 0 ? "text-emerald-600" : "text-red-600"} />
       </div>
 
@@ -475,7 +475,7 @@ function MarginView({ data, loading, error, onRetry }) {
                   <td className="py-2 pr-4 font-medium text-gray-700">{c.category}</td>
                   <td className="py-2 pr-4 text-gray-600">{inr(c.revenue)}</td>
                   <td className="py-2 pr-4 text-red-500">{inr(c.cost)}</td>
-                  <td className={`py-2 pr-4 font-semibold ${c.margin >= 0 ? "text-emerald-600" : "text-red-600"}`}>{inr(c.margin)}</td>
+                  <td className={`py-2 pr-4 font-semibold ${c.margin >= 0 ? "text-emerald-600" : "text-red-600"}`}>{inr(c.margin)} ({pct(c.marginPercent)})</td>
                   <td className="py-2 pr-4 text-gray-600">{pct(c.marginPercent)}</td>
                 </tr>
               ))}
@@ -507,7 +507,7 @@ function MarginView({ data, loading, error, onRetry }) {
                   <td className="py-2 pr-4 text-gray-600">{l.orders}</td>
                   <td className="py-2 pr-4 text-gray-600">{inr(l.revenue)}</td>
                   <td className="py-2 pr-4 text-red-500">{inr(l.cost)}</td>
-                  <td className={`py-2 pr-4 font-semibold ${l.margin >= 0 ? "text-emerald-600" : "text-red-600"}`}>{inr(l.margin)}</td>
+                  <td className={`py-2 pr-4 font-semibold ${l.margin >= 0 ? "text-emerald-600" : "text-red-600"}`}>{inr(l.margin)} ({pct(l.marginPercent)})</td>
                   <td className="py-2 pr-4 text-gray-600">{pct(l.marginPercent)}</td>
                 </tr>
               ))}
@@ -541,7 +541,7 @@ function MarginView({ data, loading, error, onRetry }) {
                   <td className="py-2 pr-4 text-gray-600">{v.totalOrders}</td>
                   <td className="py-2 pr-4 text-gray-600">{inr(v.totalRevenue)}</td>
                   <td className="py-2 pr-4 text-red-500">{inr(v.totalCost)}</td>
-                  <td className={`py-2 pr-4 font-semibold ${v.margin >= 0 ? "text-emerald-600" : "text-red-600"}`}>{inr(v.margin)}</td>
+                  <td className={`py-2 pr-4 font-semibold ${v.margin >= 0 ? "text-emerald-600" : "text-red-600"}`}>{inr(v.margin)} ({pct(v.marginPercent)})</td>
                   <td className="py-2 pr-4 text-gray-600">{pct(v.marginPercent)}</td>
                 </tr>
               ))}
