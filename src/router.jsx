@@ -10,6 +10,7 @@ import SubscribersPage from "./pages/subscribers/SubscribersPage";
 import AnalyticsDashboard from "./pages/analytics/AnalyticsDashboard";
 import VendorsPage from "./pages/vendors/VendorsPage";
 import VendorProfilePage from "./pages/vendors/VendorProfilePage";
+import CouponsPage from "./pages/coupons/CouponsPage";
 
 // ── Existing pages ────────────────────────────────────────────────────────────
 const Home            = lazy(() => import("./pages/home/home"));
@@ -75,6 +76,7 @@ const Router = () => {
     { path: "/analytics",       element: <AnalyticsDashboard />, protected: true },
     { path: "/vendors",         element: <VendorsPage />,        protected: true },
     { path: "/vendors/:id",     element: <VendorProfilePage />,  protected: true },
+    { path: "/coupons",         element: <CouponsPage />,        protected: true },
     // ── Bulk Upload ──
     { path: "/upload/flowers", element: <FlowersUpload />, protected: true },
     { path: "/upload/cakes",   element: <CakesUpload />,   protected: true },
