@@ -56,7 +56,12 @@ export default function BlogPostsList() {
                     <div className="font-medium text-gray-800">{p.title}</div>
                     <div className="text-gray-400 text-xs">/blog/{p.category?.slug}/{p.slug}</div>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{p.category?.name || "—"}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {p.category?.name || "—"}
+                    {p.additionalCategories?.length > 0 && (
+                      <span className="text-gray-400"> +{p.additionalCategories.length}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{p.authorName}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-semibold px-2 py-1 rounded-full ${p.status === "published" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>

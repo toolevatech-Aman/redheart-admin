@@ -47,7 +47,7 @@ function Field({ label, required, hint, className = "", children }) {
 
 const initialForm = {
   title: "", slug: "", slugTouched: false,
-  category: "", subcategory: "",
+  category: "", additionalCategories: [], subcategory: "",
   coverImage: "", excerpt: "", content: "",
   authorName: "", status: "draft",
   metaTitle: "", metaDescription: "",
@@ -82,7 +82,9 @@ export default function AddEditBlogPost() {
         const post = await fetchBlogPostById(id);
         setForm({
           title: post.title, slug: post.slug, slugTouched: true,
-          category: post.category?._id || "", subcategory: post.subcategory?._id || "",
+          category: post.category?._id || "",
+          additionalCategories: (post.additionalCategories || []).map((c) => c._id || c),
+          subcategory: post.subcategory?._id || "",
           coverImage: post.coverImage || "", excerpt: post.excerpt || "", content: post.content || "",
           authorName: post.authorName || "", status: post.status,
           metaTitle: post.metaTitle || "", metaDescription: post.metaDescription || "",
@@ -169,6 +171,7 @@ export default function AddEditBlogPost() {
     title: form.title.trim(),
     slug: toSlug(form.slug),
     category: form.category,
+    additionalCategories: form.additionalCategories,
     subcategory: form.subcategory || null,
     coverImage: form.coverImage,
     excerpt: form.excerpt,
@@ -234,7 +237,7 @@ export default function AddEditBlogPost() {
           <Field label="Slug" required hint="Auto from title; editable."><input className={inputCls} value={form.slug} onChange={set("slug")} /></Field>
           <Field label="Author Name" required><input className={inputCls} value={form.authorName} onChange={set("authorName")} /></Field>
 
-          <Field label="Category" required>
+          <Field label="Primary Category" required hint="Drives this post's URL.">
             <div className="flex gap-2">
               <select className={inputCls} value={form.category} onChange={set("category")}>
                 <option value="">Select…</option>
@@ -248,6 +251,20 @@ export default function AddEditBlogPost() {
                 <button type="button" onClick={handleAddCategory} className="shrink-0 text-sm px-3 rounded-lg bg-red-600 text-white">Create</button>
               </div>
             )}
+          </Field>
+          <Field label="Additional Categories" hint="Also list this post under these categories' /blog hub pages — doesn't change the URL.">
+            <div className="flex flex-wrap gap-2">
+              {categories.filter((c) => c._id !== form.category).length === 0 && (
+                <span className="text-xs text-gray-400">No other categories yet.</span>
+              )}
+              {categories.filter((c) => c._id !== form.category).map((c) => (
+                <label key={c._id} className={`text-xs px-3 py-1.5 rounded-full border cursor-pointer ${form.additionalCategories.includes(c._id) ? "bg-red-600 text-white border-red-600" : "border-gray-300 text-gray-600"}`}>
+                  <input type="checkbox" className="hidden" checked={form.additionalCategories.includes(c._id)}
+                    onChange={() => setForm((f) => ({ ...f, additionalCategories: f.additionalCategories.includes(c._id) ? f.additionalCategories.filter((v) => v !== c._id) : [...f.additionalCategories, c._id] }))} />
+                  {c.name}
+                </label>
+              ))}
+            </div>
           </Field>
           <Field label="Subcategory" hint="Hub/filtering only — not part of the URL.">
             <select className={inputCls} value={form.subcategory} onChange={set("subcategory")}>
@@ -354,7 +371,8 @@ export default function AddEditBlogPost() {
           <Field label="Occasions" hint="Comma-separated"><input className={inputCls} value={form.tagOccasions} onChange={set("tagOccasions")} placeholder="Birthday, Anniversary" /></Field>
           <Field label="Relationships" hint="Comma-separated"><input className={inputCls} value={form.tagRelationships} onChange={set("tagRelationships")} placeholder="Wife, Mother" /></Field>
 
-          <Field label="Cities" className="sm:col-span-2">
+          <Field label="Cities" className="sm:col-span-2"
+            hint='Type "India" as the city for a category to match every city page under that category, instead of just one.'>
             <div className="space-y-2">
               {cities.map((c, i) => (
                 <div key={i} className="flex gap-2 items-center">
@@ -362,7 +380,7 @@ export default function AddEditBlogPost() {
                     <option value="">Category…</option>
                     {PRODUCT_CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
-                  <input className={inputCls} placeholder="city-slug (e.g. mumbai)" value={c.citySlug} onChange={(e) => setCities((rows) => rows.map((r, idx) => idx === i ? { ...r, citySlug: e.target.value } : r))} />
+                  <input className={inputCls} placeholder="city-slug (e.g. mumbai, or India for all)" value={c.citySlug} onChange={(e) => setCities((rows) => rows.map((r, idx) => idx === i ? { ...r, citySlug: e.target.value } : r))} />
                   <button type="button" onClick={() => setCities((rows) => rows.filter((_, idx) => idx !== i))} className="text-red-500 text-sm px-2">✕</button>
                 </div>
               ))}
