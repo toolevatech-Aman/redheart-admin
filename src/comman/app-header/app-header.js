@@ -63,6 +63,18 @@ const NAV = [
       },
     ],
   },
+  {
+    label: "Blog",
+    children: [
+      {
+        group: "📝 Content",
+        items: [
+          { label: "Blog Posts",      path: "/blog-posts" },
+          { label: "Blog Categories", path: "/blog-categories" },
+        ],
+      },
+    ],
+  },
   { label: "Questions",  path: "/questions"  },
   { label: "City Pages",     path: "/city-pages"     },
   { label: "Category Pages",  path: "/category-pages"  },

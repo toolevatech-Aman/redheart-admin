@@ -17,6 +17,9 @@ const Home            = lazy(() => import("./pages/home/home"));
 const Login           = lazy(() => import("./pages/login/login"));
 const AddProduct      = lazy(() => import("./pages/products/addProducts"));
 const AddProductManual = lazy(() => import("./pages/products/AddProductManual"));
+const BlogCategoriesManager = lazy(() => import("./pages/blog/BlogCategoriesManager"));
+const BlogPostsList  = lazy(() => import("./pages/blog/BlogPostsList"));
+const AddEditBlogPost = lazy(() => import("./pages/blog/AddEditBlogPost"));
 const EditProduct     = lazy(() => import("./pages/products/editProducts"));
 const DeleteProducts  = lazy(() => import("./pages/products/deleteProducts"));
 const ImageUpload     = lazy(() => import("./pages/image-upload/image-upload"));
@@ -61,6 +64,10 @@ const Router = () => {
     { path: "/home",          element: <Home />,                protected: true },
     { path: "/addProduct",    element: <AddProduct />,          protected: true },
     { path: "/addProductManual", element: <AddProductManual />, protected: true },
+    { path: "/blog-categories",  element: <BlogCategoriesManager />, protected: true },
+    { path: "/blog-posts",       element: <BlogPostsList />,         protected: true },
+    { path: "/blog-posts/new",   element: <AddEditBlogPost />,       protected: true },
+    { path: "/blog-posts/:id/edit", element: <AddEditBlogPost />,    protected: true },
     { path: "/deleteProduct", element: <DeleteProducts />,      protected: true },
     { path: "/imageUpload",   element: <ImageUpload />,         protected: true },
     { path: "/editProduct",   element: <EditProduct />,         protected: true },
