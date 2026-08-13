@@ -16,6 +16,7 @@ import CouponsPage from "./pages/coupons/CouponsPage";
 const Home            = lazy(() => import("./pages/home/home"));
 const Login           = lazy(() => import("./pages/login/login"));
 const AddProduct      = lazy(() => import("./pages/products/addProducts"));
+const AddProductManual = lazy(() => import("./pages/products/AddProductManual"));
 const EditProduct     = lazy(() => import("./pages/products/editProducts"));
 const DeleteProducts  = lazy(() => import("./pages/products/deleteProducts"));
 const ImageUpload     = lazy(() => import("./pages/image-upload/image-upload"));
@@ -59,6 +60,7 @@ const Router = () => {
     { path: "/",              element: <Home />,                protected: true },
     { path: "/home",          element: <Home />,                protected: true },
     { path: "/addProduct",    element: <AddProduct />,          protected: true },
+    { path: "/addProductManual", element: <AddProductManual />, protected: true },
     { path: "/deleteProduct", element: <DeleteProducts />,      protected: true },
     { path: "/imageUpload",   element: <ImageUpload />,         protected: true },
     { path: "/editProduct",   element: <EditProduct />,         protected: true },

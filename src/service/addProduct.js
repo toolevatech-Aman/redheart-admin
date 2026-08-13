@@ -13,6 +13,11 @@ const buildQueryString = (params) => {
   return query.toString();
 };
 
+export const addSingleProduct = async (productData) => {
+  const response = await Post("/products", productData);
+  return response.data;
+};
+
 export const AddProductCSV = async (file) => {
   const response = await PostMultipart("/products/import", file);
   return response.data;
