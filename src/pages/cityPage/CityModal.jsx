@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Get } from "../../service/axiosService";
+import RichHtmlEditor from "../../comman/RichHtmlEditor/RichHtmlEditor";
 
 // ── Tab IDs ───────────────────────────────────────────────────────────────────
 const TABS = [
@@ -438,26 +439,15 @@ const CityModal = ({ city, onClose, onSave }) => {
           {activeTab === "footer" && (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">SEO Footer Content (HTML)</label>
-                <textarea
-                  rows={10}
+                <label className="block text-xs font-semibold text-gray-600 mb-1">SEO Footer Content</label>
+                <RichHtmlEditor
                   value={form.footerContent}
-                  onChange={(e) => handleChange("footerContent", e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 resize-y"
+                  onChange={(html) => handleChange("footerContent", html)}
+                  minHeight={220}
                   placeholder="<h2>About Flower Delivery in...</h2>"
                 />
-                <p className="text-xs text-gray-400 mt-1">Supports: H2–H6, tables, links, images, lists</p>
+                <p className="text-xs text-gray-400 mt-1">Supports: headings, tables, links, images, lists</p>
               </div>
-
-              {form.footerContent && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 mb-1">Preview</p>
-                  <div
-                    className="border border-gray-200 rounded-lg p-4 bg-gray-50 text-sm prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: form.footerContent }}
-                  />
-                </div>
-              )}
             </div>
           )}
 

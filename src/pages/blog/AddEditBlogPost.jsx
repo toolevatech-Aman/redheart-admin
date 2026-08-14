@@ -4,6 +4,7 @@ import {
   fetchBlogCategories, fetchBlogSubcategories, createBlogCategory,
   fetchBlogPostById, createBlogPost, updateBlogPost,
 } from "../../service/blogService";
+import RichHtmlEditor from "../../comman/RichHtmlEditor/RichHtmlEditor";
 
 const toSlug = (str) =>
   (str || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -303,8 +304,11 @@ export default function AddEditBlogPost() {
                 ⚠ Found an &lt;h1&gt; inside the content — remove it. The title field is the only H1 on this page.
               </div>
             )}
-            <textarea className={`${inputCls} font-mono`} rows={18} value={form.content} onChange={set("content")}
-              placeholder={"<h2>Why Mumbai Loves Flowers</h2>\n<p>...</p>\n<h3>Best Flower Markets</h3>\n<p>...</p>"} />
+            <RichHtmlEditor
+              value={form.content}
+              onChange={(html) => setForm((f) => ({ ...f, content: html }))}
+              placeholder="Write the post here — use the Heading button for section titles, and the link button to interlink to other pages."
+            />
           </div>
 
           <div className="space-y-6">
