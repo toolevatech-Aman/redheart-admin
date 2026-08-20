@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { Search, Shield, ShieldCheck, UserMinus, RefreshCw, Mail } from "lucide-react";
-import { fetchAdmins, searchUsersForAccess, updateUserAccess } from "../../service/accessControl";
+import { Search, Shield, ShieldCheck, UserMinus, RefreshCw, Mail, UserPlus } from "lucide-react";
+import { fetchAdmins, searchUsersForAccess, updateUserAccess, inviteAdminByEmail } from "../../service/accessControl";
 import { ACCESS_LEVELS, ACCESS_LEVEL_LABELS } from "../../constants/accessControl";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const fmtDate = (d) => {
   if (!d) return "—";
@@ -45,6 +47,10 @@ export default function AccessControlPage() {
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
 
+  const [inviteLevel, setInviteLevel] = useState("overall");
+  const [inviting, setInviting] = useState(false);
+  const [inviteMsg, setInviteMsg] = useState(null);
+
   const loadAdmins = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -73,6 +79,7 @@ export default function AccessControlPage() {
     if (!q) return;
     setSearching(true);
     setSearched(true);
+    setInviteMsg(null);
     try {
       const res = await searchUsersForAccess(q);
       setResults(res.data || []);
@@ -81,6 +88,25 @@ export default function AccessControlPage() {
       setResults([]);
     } finally {
       setSearching(false);
+    }
+  };
+
+  const handleInvite = async () => {
+    const email = query.trim().toLowerCase();
+    if (!EMAIL_RE.test(email)) return;
+    setInviting(true);
+    setInviteMsg(null);
+    try {
+      await inviteAdminByEmail(email, inviteLevel);
+      setInviteMsg({ type: "success", text: `${email} can now sign in and will land at ${ACCESS_LEVEL_LABELS[inviteLevel]} access.` });
+      setResults([]);
+      setSearched(false);
+      setQuery("");
+      await loadAdmins();
+    } catch (err) {
+      setInviteMsg({ type: "error", text: err?.response?.data?.message || "Failed to grant access." });
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -141,15 +167,15 @@ export default function AccessControlPage() {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-8">
         <h3 className="text-base font-semibold text-gray-800 mb-1">Grant Access</h3>
         <p className="text-xs text-gray-500 mb-3">
-          The person must have signed into the admin panel at least once (even if it showed "Access denied")
-          before you can find them here — that's what creates their account.
+          Search an email that's already signed into the panel once, or type a Gmail address that's
+          never logged in — you can grant it access up front, and it applies the moment they sign in.
         </p>
         <form onSubmit={handleSearch} className="flex gap-2 mb-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); setInviteMsg(null); }}
               placeholder="Search by email or name…"
               className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-red-400"
             />
@@ -159,10 +185,42 @@ export default function AccessControlPage() {
           </button>
         </form>
 
+        {inviteMsg && (
+          <div className={`mb-3 rounded-lg px-3 py-2 text-xs font-medium ${inviteMsg.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+            {inviteMsg.text}
+          </div>
+        )}
+
         {searched && !searching && results.length === 0 && (
-          <p className="text-sm text-gray-400">
-            No account found for "{query}". They need to sign in to the admin panel once first.
-          </p>
+          EMAIL_RE.test(query.trim()) ? (
+            <div className="flex flex-wrap items-center gap-2 border border-dashed border-gray-300 rounded-lg p-3">
+              <UserPlus className="w-4 h-4 text-gray-400 shrink-0" />
+              <p className="text-sm text-gray-600 flex-1 min-w-[200px]">
+                <span className="font-medium">{query.trim()}</span> hasn't signed in yet — grant access now and it'll apply on their first login.
+              </p>
+              <select
+                value={inviteLevel}
+                onChange={(e) => setInviteLevel(e.target.value)}
+                className="text-xs font-medium border border-gray-300 rounded-lg px-2 py-1.5 bg-white"
+              >
+                {ACCESS_LEVELS.map((lvl) => (
+                  <option key={lvl} value={lvl}>{ACCESS_LEVEL_LABELS[lvl]}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleInvite}
+                disabled={inviting}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" /> {inviting ? "Granting…" : "Grant Access"}
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">
+              No account found for "{query}". If this is meant to be an email address, make sure it's a full,
+              valid email so it can be pre-authorized.
+            </p>
+          )
         )}
 
         {results.length > 0 && (
