@@ -12,6 +12,7 @@ import AnalyticsDashboard from "./pages/analytics/AnalyticsDashboard";
 import VendorsPage from "./pages/vendors/VendorsPage";
 import VendorProfilePage from "./pages/vendors/VendorProfilePage";
 import CouponsPage from "./pages/coupons/CouponsPage";
+import AccessControlPage from "./pages/access/AccessControlPage";
 
 // ── Existing pages ────────────────────────────────────────────────────────────
 const Home            = lazy(() => import("./pages/home/home"));
@@ -81,6 +82,7 @@ const Router = () => {
     { path: "/category-config",  element: <CategoryConfigManager />, protected: true },
     { path: "/orders",        element: <OrderPage />,           protected: true },
     { path: "/users",         element: <UsersPage />,           protected: true },
+    { path: "/access-control", element: <AccessControlPage />,  protected: true },
     { path: "/surprise-orders", element: <SurpriseOrdersPage />, protected: true },
     { path: "/shayari-review",  element: <ShayariReviewPage />,  protected: true },
     { path: "/subscribers",     element: <SubscribersPage />,    protected: true },
