@@ -3,7 +3,8 @@ import {
   Search, Phone, Mail, MapPin, ChevronDown, ChevronUp, ShoppingCart,
   Package, IndianRupee, MessageCircle, User as UserIcon, RefreshCw, Home, Zap,
 } from "lucide-react";
-import { Get } from "../../service/axiosService";
+import { Get, Patch } from "../../service/axiosService";
+import { ACCESS_LEVELS, ACCESS_LEVEL_LABELS, getAccessLevel } from "../../constants/accessControl";
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
@@ -41,6 +42,21 @@ const UsersPage = () => {
   const [search, setSearch]     = useState("");
   const [filter, setFilter]     = useState("all"); // all | ordered | not_ordered | cart | address
   const [visible, setVisible]   = useState(PAGE_SIZE);
+  const [savingAccess, setSavingAccess] = useState(null); // userId currently being updated
+  const canManageAccess = getAccessLevel() === "overall";
+
+  const handleAccessLevelChange = async (u, accessLevel) => {
+    setSavingAccess(u.userId);
+    try {
+      await Patch(`/user/admin/${u.userId}/access`, { accessLevel });
+      setUsers((prev) => prev.map((row) => (row.userId === u.userId ? { ...row, accessLevel } : row)));
+    } catch (err) {
+      console.error("Failed to update access level", err);
+      alert(err?.response?.data?.message || "Failed to update access level.");
+    } finally {
+      setSavingAccess(null);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -196,6 +212,25 @@ const UsersPage = () => {
                     <p className="font-semibold text-gray-900">{u.name || <span className="text-gray-400 italic font-normal">No name</span>}</p>
                     {u.role === "admin" && (
                       <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-red-100 text-red-600 rounded-full">Admin</span>
+                    )}
+                    {u.role === "admin" && canManageAccess && (
+                      <select
+                        value={u.accessLevel || "overall"}
+                        disabled={savingAccess === u.userId}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => handleAccessLevelChange(u, e.target.value)}
+                        className="text-[10px] font-semibold border border-gray-300 rounded-full px-2 py-0.5 bg-white disabled:opacity-50"
+                        title="Admin access level"
+                      >
+                        {ACCESS_LEVELS.map((lvl) => (
+                          <option key={lvl} value={lvl}>{ACCESS_LEVEL_LABELS[lvl]}</option>
+                        ))}
+                      </select>
+                    )}
+                    {u.role === "admin" && !canManageAccess && (
+                      <span className="px-2 py-0.5 text-[10px] font-semibold uppercase bg-gray-100 text-gray-500 rounded-full">
+                        {ACCESS_LEVEL_LABELS[u.accessLevel || "overall"]}
+                      </span>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mt-0.5">

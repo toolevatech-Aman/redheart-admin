@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { getAccessLevel, canAccessPath, defaultPathFor } from "../../constants/accessControl";
 
 // ── Nav structure ─────────────────────────────────────────────────────────────
 const NAV = [
@@ -135,12 +136,30 @@ function Dropdown({ item, onNavigate }) {
   );
 }
 
+// ── Filter the nav down to what this admin's access level can reach ──────────
+function filterNavForAccess(nav, level) {
+  if (level === "overall") return nav;
+  return nav
+    .map((item) => {
+      if (!item.children) {
+        return canAccessPath(item.path, level) ? item : null;
+      }
+      const children = item.children
+        .map((group) => ({ ...group, items: group.items.filter((sub) => canAccessPath(sub.path, level)) }))
+        .filter((group) => group.items.length > 0);
+      return children.length > 0 ? { ...item, children } : null;
+    })
+    .filter(Boolean);
+}
+
 // ── Header ────────────────────────────────────────────────────────────────────
 const Header = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const [mobileOpen, setMobileOpen]   = useState(false);
   const [mobileGroup, setMobileGroup] = useState(null);
+  const accessLevel = getAccessLevel();
+  const navItems = useMemo(() => filterNavForAccess(NAV, accessLevel), [accessLevel]);
 
   const handleLogout = () => { localStorage.clear(); navigate("/login"); };
   const isActive = (path) => location.pathname === path;
@@ -150,7 +169,7 @@ const Header = () => {
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-15 py-3">
           {/* Logo */}
-          <button onClick={() => navigate("/home")} className="flex items-center gap-2 group">
+          <button onClick={() => navigate(defaultPathFor(accessLevel))} className="flex items-center gap-2 group">
             <div className="w-7 h-7 rounded-lg bg-red-600 flex items-center justify-center shadow-sm">
               <span className="text-white font-bold text-xs">RH</span>
             </div>
@@ -159,7 +178,7 @@ const Header = () => {
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-1">
-            {NAV.map(item =>
+            {navItems.map(item =>
               item.children ? (
                 <Dropdown key={item.label} item={item} onNavigate={navigate} />
               ) : (
@@ -192,7 +211,7 @@ const Header = () => {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="lg:hidden bg-white border-t border-gray-100 pb-4 px-4 space-y-1 max-h-screen overflow-y-auto">
-          {NAV.map(item =>
+          {navItems.map(item =>
             item.children ? (
               <div key={item.label}>
                 <button

@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./comman/app-layout/app-layout";
+import { getAccessLevel, canAccessPath, defaultPathFor } from "./constants/accessControl";
 import AdminPageContentEditor from "./pages/pageContent/pageContent";
 import OrderPage from "./pages/orders/order";
 import UsersPage from "./pages/users/UsersPage";
@@ -55,6 +56,7 @@ const fallback = (
 
 const Router = () => {
   const authToken = localStorage.getItem("authToken");
+  const accessLevel = getAccessLevel();
 
   const routes = [
     // ── Public ──
@@ -106,6 +108,9 @@ const Router = () => {
         {routes.map(({ path, element, protected: isProtected }, index) => {
           if (isProtected) {
             if (!authToken) return <Route key={index} path={path} element={<Navigate to="/login" replace />} />;
+            if (!canAccessPath(path, accessLevel)) {
+              return <Route key={index} path={path} element={<Navigate to={defaultPathFor(accessLevel)} replace />} />;
+            }
             return <Route key={index} path={path} element={<AppLayout>{element}</AppLayout>} />;
           }
           return <Route key={index} path={path} element={element} />;

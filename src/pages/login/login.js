@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Sparkles, Heart, Shield } from "lucide-react";
 import logo from "../../assets/redHeartLogoo.png";
 import { googleAuthApi } from "../../service/loginService";
+import { defaultPathFor } from "../../constants/accessControl";
 
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
@@ -56,7 +57,7 @@ export default function LoginWithGoogle() {
       }
       localStorage.setItem("authToken", res.token);
       localStorage.setItem("user", JSON.stringify(res.user));
-      navigate("/home");
+      navigate(defaultPathFor(res.user?.accessLevel || "overall"));
       window.location.reload();
     } catch (err) {
       setError(err?.response?.data?.message || "Google sign-in failed. Please try again.");
