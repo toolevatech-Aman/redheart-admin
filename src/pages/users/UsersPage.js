@@ -22,6 +22,35 @@ const fmtDate = (d) => {
   return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 };
 
+// Date + time (IST) — used for activity timestamps where the time of day
+// actually matters (login, cart/buy-now update), not just the day.
+const fmtDateTime = (d) => {
+  if (!d) return "—";
+  const date = new Date(d);
+  if (isNaN(date)) return "—";
+  return date.toLocaleString("en-IN", {
+    day: "numeric", month: "short", year: "numeric",
+    hour: "numeric", minute: "2-digit", hour12: true,
+  });
+};
+
+// "5 min ago" / "3 hr ago" / "2 days ago" style relative label — makes the
+// most-recent-first ordering easy to scan at a glance.
+const fmtRelative = (d) => {
+  if (!d) return null;
+  const date = new Date(d);
+  if (isNaN(date)) return null;
+  const diffMs = Date.now() - date.getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} hr ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return `${day} day${day > 1 ? "s" : ""} ago`;
+  return fmtDate(d);
+};
+
 const STATUS_STYLES = {
   Pending:           "bg-amber-50 text-amber-700",
   Accepted:          "bg-blue-50 text-blue-700",
@@ -95,11 +124,12 @@ const UsersPage = () => {
       return hay.includes(q);
     });
 
-    // Active cart/buy-now intent floats to the top regardless of join date —
-    // that's the signal worth acting on, and it shouldn't hide behind
-    // pagination just because the account isn't recent.
-    const hasIntent = (u) => (u.cartItems?.length > 0 || u.buyNowItem) ? 0 : 1;
-    return [...matches].sort((a, b) => hasIntent(a) - hasIntent(b));
+    // Most recently active first — login, cart update, and buy-now clicks
+    // all feed into lastActivityAt (computed server-side), so someone who
+    // just added something to cart or logged in shows up at the top
+    // regardless of how old the account itself is.
+    const activityTime = (u) => u.lastActivityAt ? new Date(u.lastActivityAt).getTime() : 0;
+    return [...matches].sort((a, b) => activityTime(b) - activityTime(a));
   }, [users, search, filter]);
 
   const stats = useMemo(() => ({
@@ -250,10 +280,21 @@ const UsersPage = () => {
                       </a>
                     )}
                     <span>Joined {fmtDate(u.createdAt)}</span>
+                    {u.lastLoginAt && (
+                      <span title={fmtDateTime(u.lastLoginAt)}>Last login {fmtRelative(u.lastLoginAt)}</span>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  {u.lastActivityAt && (
+                    <span
+                      title={`Last active: ${fmtDateTime(u.lastActivityAt)}`}
+                      className="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600"
+                    >
+                      Active {fmtRelative(u.lastActivityAt)}
+                    </span>
+                  )}
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${u.orderCount > 0 ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-600"}`}>
                     {u.orderCount > 0 ? `${u.orderCount} order${u.orderCount > 1 ? "s" : ""}` : "No orders"}
                   </span>
@@ -282,7 +323,7 @@ const UsersPage = () => {
                   <div>
                     <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-1.5">
                       <ShoppingCart className="w-4 h-4 text-blue-500" /> Cart
-                      {hasCart && <span className="text-xs font-normal text-gray-400">· updated {fmtDate(u.cartUpdatedAt)}</span>}
+                      {hasCart && <span className="text-xs font-normal text-gray-400">· updated {fmtRelative(u.cartUpdatedAt)}</span>}
                     </h4>
                     {!hasCart ? (
                       <p className="text-gray-400 italic">Cart is empty</p>
