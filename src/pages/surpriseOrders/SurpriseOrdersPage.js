@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Search, Gift, IndianRupee, RefreshCw, ExternalLink, MapPin, Phone, Mail, Heart,
+  MessageCircle, Clock, Copy, Check,
 } from "lucide-react";
 import { fetchSurpriseOrders } from "../../service/surpriseOrders";
 
@@ -29,6 +30,30 @@ const OCCASION_LABELS = {
 };
 
 const PAGE_SIZE = 20;
+
+const waLink = (num) => {
+  const digits = String(num || "").replace(/\D/g, "");
+  if (!digits) return null;
+  const withCountry = digits.length === 10 ? `91${digits}` : digits;
+  return `https://wa.me/${withCountry}`;
+};
+
+const CopyLinkButton = ({ slug }) => {
+  const [copied, setCopied] = useState(false);
+  const url = `https://www.redheart.in/valentine-surprise/${slug}`;
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  };
+  return (
+    <button onClick={handleCopy} className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
+      {copied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy link</>}
+    </button>
+  );
+};
 
 const SurpriseOrdersPage = () => {
   const [orders, setOrders]     = useState([]);
@@ -66,7 +91,7 @@ const SurpriseOrdersPage = () => {
       if (!q) return true;
       const hay = [
         o.slug, o.partnerName, o.yourName, o.recipientName,
-        o.email, o.whatsapp, o.deliveryPhone, o.razorpayPaymentId,
+        o.email, o.whatsapp, o.receiverWhatsapp, o.deliveryPhone, o.razorpayPaymentId,
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
@@ -175,6 +200,7 @@ const SurpriseOrdersPage = () => {
                   >
                     View page <ExternalLink className="w-3 h-3" />
                   </a>
+                  <CopyLinkButton slug={o.slug} />
                 </div>
                 <p className="text-sm font-semibold text-gray-900 mt-1.5">
                   {o.yourName || "Someone"} → {o.partnerName || o.recipientName || "their partner"}
@@ -187,6 +213,17 @@ const SurpriseOrdersPage = () => {
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
               {o.email && (
                 <a href={`mailto:${o.email}`} className="flex items-center gap-1 hover:underline"><Mail className="w-3 h-3" /> {o.email}</a>
+              )}
+              {o.receiverWhatsapp && (
+                <a href={waLink(o.receiverWhatsapp)} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-green-600 hover:underline font-medium">
+                  <MessageCircle className="w-3 h-3" /> Send to {o.receiverWhatsapp}
+                </a>
+              )}
+              {o.sendAt && (
+                <span className="flex items-center gap-1 text-amber-600">
+                  <Clock className="w-3 h-3" /> {fmtDateTime(o.sendAt)}
+                </span>
               )}
               {(o.whatsapp || o.deliveryPhone) && (
                 <a href={`tel:${o.whatsapp || o.deliveryPhone}`} className="flex items-center gap-1 text-blue-600 hover:underline">
