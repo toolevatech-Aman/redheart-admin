@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Search, Gift, IndianRupee, RefreshCw, ExternalLink, MapPin, Phone, Mail, Heart,
-  MessageCircle, Clock, Copy, Check,
+  MessageCircle, Clock, Copy, Check, Lock,
 } from "lucide-react";
 import { fetchSurpriseOrders } from "../../service/surpriseOrders";
 
@@ -223,6 +223,11 @@ const SurpriseOrdersPage = () => {
               {o.sendAt && (
                 <span className="flex items-center gap-1 text-amber-600">
                   <Clock className="w-3 h-3" /> {fmtDateTime(o.sendAt)}
+                </span>
+              )}
+              {o.unlockAt && (
+                <span className="flex items-center gap-1 text-violet-600" title="Page stays locked until this moment">
+                  <Lock className="w-3 h-3" /> Unlocks {fmtDateTime(o.unlockAt)}
                 </span>
               )}
               {(o.whatsapp || o.deliveryPhone) && (
