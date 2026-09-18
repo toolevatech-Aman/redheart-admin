@@ -1,11 +1,48 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchAllBlogPosts, deleteBlogPost } from "../../service/blogService";
+import { fetchAllBlogPosts, deleteBlogPost, fetchBlogQueueStatus } from "../../service/blogService";
+
+// One card per product vertical — the automated daily pipeline (see
+// redheart-backend-clean: scripts/import-blog-source.mjs +
+// src/utils/dailyBlogPublish.js) releases 3 drafts/day/vertical to a fixed
+// author each. This just answers "how much runway is left before someone
+// needs to feed it more source content."
+function QueueStatusCard({ v }) {
+  const low = v.draftsRemaining !== undefined && v.daysLeft <= 7 && v.daysLeft > 0;
+  const empty = v.draftsRemaining === 0;
+  return (
+    <div className={`rounded-2xl border p-4 ${empty ? "border-red-200 bg-red-50" : low ? "border-amber-200 bg-amber-50" : "border-gray-200 bg-white"}`}>
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-sm font-semibold text-gray-800">{v.categoryName || v.vertical}</p>
+        <span className="text-[11px] text-gray-400">by {v.author}</span>
+      </div>
+      {v.error ? (
+        <p className="text-xs text-red-500">{v.error}</p>
+      ) : (
+        <>
+          <p className={`text-2xl font-bold ${empty ? "text-red-600" : low ? "text-amber-600" : "text-gray-800"}`}>
+            {v.daysLeft} {v.daysLeft === 1 ? "day" : "days"}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {v.draftsRemaining} drafts left · {v.perDay}/day
+          </p>
+          {v.runsOutOn && (
+            <p className="text-[11px] text-gray-400 mt-1">
+              Runs out ~{new Date(v.runsOutOn).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+            </p>
+          )}
+          {empty && <p className="text-[11px] text-red-500 mt-1 font-medium">Queue empty — add more source posts</p>}
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function BlogPostsList() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [queueStatus, setQueueStatus] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -17,6 +54,9 @@ export default function BlogPostsList() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    fetchBlogQueueStatus().then(setQueueStatus).catch(() => {});
+  }, []);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this post?")) return;
@@ -32,6 +72,19 @@ export default function BlogPostsList() {
           + Add Blog Post
         </button>
       </div>
+
+      {queueStatus && (
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+            Automated daily publish queue — {queueStatus.perDayTotal}/day total
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {queueStatus.verticals.map((v) => (
+              <QueueStatusCard key={v.vertical} v={v} />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (

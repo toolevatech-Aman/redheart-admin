@@ -15,6 +15,7 @@ export const deleteBlogSubcategory = async (id) => (await Delete(`/blogs/subcate
 
 // ── Posts ─────────────────────────────────────────────────────────────────
 export const fetchAllBlogPosts = async () => (await Get("/blogs/admin/all")).data;
+export const fetchBlogQueueStatus = async () => (await Get("/blogs/admin/queue-status")).data;
 export const fetchBlogPostById = async (id) => (await Get(`/blogs/admin/${id}`)).data;
 export const createBlogPost = async (data) => (await Post("/blogs", data)).data;
 export const updateBlogPost = async (id, data) => (await Put(`/blogs/${id}`, data)).data;
