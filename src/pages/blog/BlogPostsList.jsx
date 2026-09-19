@@ -99,6 +99,7 @@ export default function BlogPostsList() {
                 <th className="text-left px-4 py-3">Category</th>
                 <th className="text-left px-4 py-3">Author</th>
                 <th className="text-left px-4 py-3">Status</th>
+                <th className="text-left px-4 py-3">Image</th>
                 <th className="text-right px-4 py-3">Actions</th>
               </tr>
             </thead>
@@ -119,6 +120,11 @@ export default function BlogPostsList() {
                   <td className="px-4 py-3">
                     <span className={`text-xs font-semibold px-2 py-1 rounded-full ${p.status === "published" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
                       {p.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${p.coverImage ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+                      {p.coverImage ? "Yes" : "No"}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right space-x-3">
