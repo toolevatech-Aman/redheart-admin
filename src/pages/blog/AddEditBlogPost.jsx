@@ -5,6 +5,7 @@ import {
   fetchBlogPostById, createBlogPost, updateBlogPost,
 } from "../../service/blogService";
 import RichHtmlEditor from "../../comman/RichHtmlEditor/RichHtmlEditor";
+import BlogCoverImageUploader from "./BlogCoverImageUploader";
 
 const toSlug = (str) =>
   (str || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -274,7 +275,15 @@ export default function AddEditBlogPost() {
             </select>
           </Field>
 
-          <Field label="Cover Image URL" className="sm:col-span-2"><input className={inputCls} value={form.coverImage} onChange={set("coverImage")} placeholder="https://..." /></Field>
+          <Field label="Cover Image URL" className="sm:col-span-2" hint="Upload compresses to WebP, max 1200px wide, ~200KB — same standard as every other blog cover image.">
+            <div className="flex gap-2 items-start">
+              {form.coverImage && (
+                <img src={form.coverImage} alt="Cover preview" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shrink-0" />
+              )}
+              <input className={inputCls} value={form.coverImage} onChange={set("coverImage")} placeholder="https://..." />
+              <BlogCoverImageUploader postId={id} onUploaded={(url) => setForm((f) => ({ ...f, coverImage: url }))} />
+            </div>
+          </Field>
           <Field label="Excerpt" hint="Shown in Related Blog cards" className="sm:col-span-2">
             <textarea className={inputCls} rows={2} value={form.excerpt} onChange={set("excerpt")} />
           </Field>
