@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 import { createCoupon, updateCoupon } from "../../service/coupons";
 
-const CATEGORIES = ["Flowers", "Cakes", "Plants", "Gifts", "Hampers"];
+const CATEGORIES = ["Flowers", "Cakes", "Plants", "Gifts", "Hampers", "Surprise"];
 
 const toDateInput = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 
@@ -149,7 +149,7 @@ const CouponFormModal = ({ coupon, onClose, onSaved }) => {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-gray-500">Applies To (leave empty for all categories)</label>
+            <label className="text-xs font-semibold text-gray-500">Applies To (leave empty for all product categories)</label>
             <div className="flex gap-2 mt-1.5 flex-wrap">
               {CATEGORIES.map((c) => (
                 <button type="button" key={c} onClick={() => toggleCategory(c)}
@@ -159,6 +159,15 @@ const CouponFormModal = ({ coupon, onClose, onSaved }) => {
                 </button>
               ))}
             </div>
+            {form.applicableCategories.includes("Surprise") ? (
+              <p className="text-[11px] text-purple-600 mt-1.5">
+                Redeemable on a surprise page's "Make it live" checkout. Discounts only the page price (₹99/₹179/₹249 tier) — never an attached gift/product's price, even if one is added in the same checkout.
+              </p>
+            ) : (
+              <p className="text-[11px] text-gray-400 mt-1.5">
+                Note: unlike product categories, "Surprise" must be selected explicitly to be usable on a surprise page — leaving everything empty does not cover it.
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
