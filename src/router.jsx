@@ -22,6 +22,7 @@ const AddProductManual = lazy(() => import("./pages/products/AddProductManual"))
 const BlogCategoriesManager = lazy(() => import("./pages/blog/BlogCategoriesManager"));
 const BlogPostsList  = lazy(() => import("./pages/blog/BlogPostsList"));
 const AddEditBlogPost = lazy(() => import("./pages/blog/AddEditBlogPost"));
+const LandingPagesManager = lazy(() => import("./pages/landingPages/LandingPagesManager"));
 const EditProduct     = lazy(() => import("./pages/products/editProducts"));
 const DeleteProducts  = lazy(() => import("./pages/products/deleteProducts"));
 const ImageUpload     = lazy(() => import("./pages/image-upload/image-upload"));
@@ -71,6 +72,7 @@ const Router = () => {
     { path: "/blog-posts",       element: <BlogPostsList />,         protected: true },
     { path: "/blog-posts/new",   element: <AddEditBlogPost />,       protected: true },
     { path: "/blog-posts/:id/edit", element: <AddEditBlogPost />,    protected: true },
+    { path: "/landing-pages",   element: <LandingPagesManager />,  protected: true },
     { path: "/deleteProduct", element: <DeleteProducts />,      protected: true },
     { path: "/imageUpload",   element: <ImageUpload />,         protected: true },
     { path: "/editProduct",   element: <EditProduct />,         protected: true },

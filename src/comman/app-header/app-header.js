@@ -79,6 +79,7 @@ const NAV = [
   { label: "Questions",  path: "/questions"  },
   { label: "City Pages",     path: "/city-pages"     },
   { label: "Category Pages",  path: "/category-pages"  },
+  { label: "Landing Pages",   path: "/landing-pages"   },
   { label: "Category Config", path: "/category-config" },
   { label: "Orders",          path: "/orders"          },
   { label: "Vendors",         path: "/vendors"         },
