@@ -90,8 +90,12 @@ const RemindersPage = () => {
           </h2>
           <p className="text-xs text-gray-400 mt-0.5">Every "My Reminders" date customers have saved, with who it's for and when it recurs</p>
         </div>
-        <button onClick={() => load(page)} className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-          <RefreshCw className="w-4 h-4" /> Refresh
+        <button
+          onClick={() => load(page)}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
         </button>
       </div>
 
