@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Search, Phone, Mail, MapPin, Copy, Check, ChevronDown, ChevronUp,
   Package, IndianRupee, Truck, Clock, RefreshCw, MessageCircle, User, Bell, BellOff, X,
@@ -7,6 +7,7 @@ import { fetchAllOrdersAdmin, updateOrderStatusAdmin } from "../../service/order
 import AssignVendorModal from "./AssignVendorModal";
 
 const POLL_MS = 20000;
+const SEARCH_DEBOUNCE_MS = 400;
 
 // Two-note chime synthesized via Web Audio API — no external sound file to host.
 function playChime(ctx) {
@@ -92,18 +93,28 @@ const waLink = (phone) => {
 // ── Component ────────────────────────────────────────────────────────────────
 const AdminOrdersFull = () => {
   const [orders, setOrders]           = useState([]);
+  const [pagination, setPagination]   = useState(null);
+  const [stats, setStats]             = useState({ total: 0, revenue: 0, pending: 0, deliverToday: 0, overdue: 0 });
+  const [page, setPage]               = useState(1);
   const [loading, setLoading]         = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError]             = useState(null);
   const [updatingId, setUpdatingId]   = useState(null);
   const [expanded, setExpanded]       = useState([]);
   const [copiedId, setCopiedId]       = useState(null);
   const [vendorModalOrder, setVendorModalOrder] = useState(null);
 
-  // Filters
+  // Filters — rawQuery is what the input shows; query is the debounced value
+  // actually sent to the server, so every keystroke doesn't trigger a fetch.
+  const [rawQuery, setRawQuery]       = useState("");
   const [query, setQuery]             = useState("");
   const [statusFilter, setStatus]     = useState("All");
   const [payFilter, setPayFilter]     = useState("All");
-  const [visible, setVisible]         = useState(PAGE_SIZE);
+
+  useEffect(() => {
+    const t = setTimeout(() => setQuery(rawQuery), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [rawQuery]);
 
   // New-order alerts (toast + chime)
   const [toasts, setToasts]           = useState([]);
@@ -120,12 +131,47 @@ const AdminOrdersFull = () => {
   };
   const dismissToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
-  const fetchOrders = async (isPoll = false) => {
-    if (!isPoll) setLoading(true);
+  // Fetches a page of orders under the current search/status/payment filters.
+  // append=true adds onto the existing list ("Load more"); otherwise it
+  // replaces it (new search/filter, or page 1 on mount/refresh).
+  const fetchOrders = async (pageToLoad, { append = false } = {}) => {
+    if (append) setLoadingMore(true); else setLoading(true);
     setError(null);
     try {
-      const response = await fetchAllOrdersAdmin();
+      const response = await fetchAllOrdersAdmin({
+        page: pageToLoad, limit: PAGE_SIZE,
+        search: query || undefined,
+        status: statusFilter !== "All" ? statusFilter : undefined,
+        paymentMode: payFilter !== "All" ? payFilter : undefined,
+      });
       if (response.success) {
+        setOrders((prev) => (append ? [...prev, ...response.data] : response.data));
+        setPagination(response.pagination);
+        setStats(response.stats);
+        setPage(pageToLoad);
+      } else setError("Failed to fetch orders");
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong while fetching orders");
+    }
+    if (append) setLoadingMore(false); else setLoading(false);
+  };
+
+  // Re-fetch from page 1 whenever search/status/payment filters change.
+  useEffect(() => {
+    fetchOrders(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, statusFilter, payFilter]);
+
+  // New-order polling is deliberately independent of the displayed, filtered,
+  // paginated `orders` list above — it always checks the latest unfiltered
+  // page 1 (newest first) so an alert never depends on what the admin
+  // happens to be viewing, and never overwrites their current page/search.
+  useEffect(() => {
+    const pollForNewOrders = async () => {
+      try {
+        const response = await fetchAllOrdersAdmin({ page: 1, limit: PAGE_SIZE });
+        if (!response.success) return;
         const incoming = response.data;
         if (seenIdsRef.current) {
           const newOnes = incoming.filter((o) => !seenIdsRef.current.has(o._id));
@@ -135,17 +181,10 @@ const AdminOrdersFull = () => {
           }
         }
         seenIdsRef.current = new Set(incoming.map((o) => o._id));
-        setOrders(incoming);
-      } else setError("Failed to fetch orders");
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong while fetching orders");
-    }
-    if (!isPoll) setLoading(false);
-  };
+      } catch (err) { console.error(err); }
+    };
 
-  useEffect(() => {
-    fetchOrders();
+    pollForNewOrders();
     // Unlock the AudioContext on the first user gesture — browsers block audio
     // that isn't triggered by interaction until then.
     const unlock = () => {
@@ -156,7 +195,7 @@ const AdminOrdersFull = () => {
     };
     document.addEventListener("click", unlock);
 
-    const interval = setInterval(() => fetchOrders(true), POLL_MS);
+    const interval = setInterval(pollForNewOrders, POLL_MS);
     return () => { clearInterval(interval); document.removeEventListener("click", unlock); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -185,40 +224,6 @@ const AdminOrdersFull = () => {
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  // ── Derived data ───────────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return orders.filter((o) => {
-      if (statusFilter !== "All" && o.orderStatus !== statusFilter) return false;
-      if (payFilter !== "All" && (o.paymentMode || "").toLowerCase() !== payFilter.toLowerCase()) return false;
-      if (!q) return true;
-      const hay = [
-        o.orderId,
-        o.user?.name, o.user?.email, o.user?.phone,
-        o.shippingAddress?.firstName, o.shippingAddress?.lastName,
-        o.shippingAddress?.phone, o.shippingAddress?.city,
-        ...(o.cartItems || []).map((c) => c.name),
-      ].filter(Boolean).join(" ").toLowerCase();
-      return hay.includes(q);
-    });
-  }, [orders, query, statusFilter, payFilter]);
-
-  const stats = useMemo(() => {
-    const today = startOfToday().getTime();
-    let revenue = 0, pending = 0, deliverToday = 0, overdue = 0;
-    for (const o of orders) {
-      if (o.orderStatus !== "Cancelled") revenue += Number(o.totalPrice || 0);
-      if (o.orderStatus === "Pending") pending++;
-      if (o.deliveryDate) {
-        const dd = new Date(o.deliveryDate); dd.setHours(0, 0, 0, 0);
-        const done = ["Delivered", "Cancelled"].includes(o.orderStatus);
-        if (dd.getTime() === today && !done) deliverToday++;
-        if (dd.getTime() < today && !done) overdue++;
-      }
-    }
-    return { total: orders.length, revenue, pending, deliverToday, overdue };
-  }, [orders]);
-
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading)
     return (
@@ -232,7 +237,7 @@ const AdminOrdersFull = () => {
     return (
       <div className="max-w-lg mx-auto mt-16 p-6 bg-red-50 border border-red-200 rounded-xl text-center">
         <p className="text-red-700 mb-4">{error}</p>
-        <button onClick={() => fetchOrders()} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Retry</button>
+        <button onClick={() => fetchOrders(1)} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Retry</button>
       </div>
     );
 
@@ -270,7 +275,7 @@ const AdminOrdersFull = () => {
             {soundOn ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
           </button>
           <button
-            onClick={() => fetchOrders()}
+            onClick={() => fetchOrders(1)}
             className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
@@ -301,15 +306,15 @@ const AdminOrdersFull = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setVisible(PAGE_SIZE); }}
+            value={rawQuery}
+            onChange={(e) => setRawQuery(e.target.value)}
             placeholder="Search order ID, customer, phone, product, city…"
             className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-rose-400"
           />
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => { setStatus(e.target.value); setVisible(PAGE_SIZE); }}
+          onChange={(e) => setStatus(e.target.value)}
           className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white"
         >
           <option value="All">All Statuses</option>
@@ -317,7 +322,7 @@ const AdminOrdersFull = () => {
         </select>
         <select
           value={payFilter}
-          onChange={(e) => { setPayFilter(e.target.value); setVisible(PAGE_SIZE); }}
+          onChange={(e) => setPayFilter(e.target.value)}
           className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white"
         >
           <option value="All">All Payments</option>
@@ -326,13 +331,15 @@ const AdminOrdersFull = () => {
         </select>
       </div>
 
-      <p className="text-xs text-gray-400 mb-3">{filtered.length} order{filtered.length !== 1 && "s"}</p>
+      <p className="text-xs text-gray-400 mb-3">
+        Showing {orders.length} of {pagination?.total ?? 0} order{pagination?.total !== 1 && "s"}
+      </p>
 
       {/* Orders */}
-      {filtered.length === 0 ? (
+      {orders.length === 0 ? (
         <p className="text-center py-16 text-gray-400">No orders match.</p>
       ) : (
-        filtered.slice(0, visible).map((order) => {
+        orders.map((order) => {
           const isExpanded = expanded.includes(order._id);
           const customer = order.user;
           const custName =
@@ -535,11 +542,14 @@ const AdminOrdersFull = () => {
       )}
 
       {/* Load more */}
-      {visible < filtered.length && (
+      {pagination && page < pagination.totalPages && (
         <div className="text-center mt-2 mb-8">
-          <button onClick={() => setVisible((v) => v + PAGE_SIZE)}
-            className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
-            Load more ({filtered.length - visible} remaining)
+          <button
+            onClick={() => fetchOrders(page + 1, { append: true })}
+            disabled={loadingMore}
+            className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
+          >
+            {loadingMore ? "Loading…" : `Load more (${pagination.total - orders.length} remaining)`}
           </button>
         </div>
       )}
