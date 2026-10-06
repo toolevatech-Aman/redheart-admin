@@ -82,7 +82,7 @@ const DeliverySurchargePage = () => {
     catch { alert("Failed to remove delivery surcharge"); }
   };
 
-  const useSuggestion = (i) => {
+  const applySuggestion = (i) => {
     setForm({ pinCode: i.pinCode, amount: String(i.suggestedSurcharge), note: "", isActive: true });
     setEditing(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -236,7 +236,7 @@ const DeliverySurchargePage = () => {
                       <td className="px-5 py-3 text-gray-600">{rule ? `+ ${inr(rule.amount)}${rule.isActive ? "" : " (off)"}` : "—"}</td>
                       <td className="px-5 py-3">
                         {i.suggestedSurcharge > 0 && (
-                          <button onClick={() => useSuggestion(i)} className="text-xs font-semibold text-rose-600 hover:underline">Use suggestion</button>
+                          <button onClick={() => applySuggestion(i)} className="text-xs font-semibold text-rose-600 hover:underline">Use suggestion</button>
                         )}
                       </td>
                     </tr>
