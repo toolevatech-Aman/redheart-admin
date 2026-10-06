@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { MapPin, RefreshCw, Trash2, Pencil } from "lucide-react";
-import { fetchSurcharges, saveSurcharge, removeSurcharge } from "../../service/pincodeSurcharge";
+import { fetchSurcharges, saveSurcharge, saveSurchargesBulk, removeSurcharge } from "../../service/pincodeSurcharge";
 
 const EMPTY = { pinCode: "", value: "", note: "", isActive: true };
+
+// "194101, 194102 194103" / one per line / "ALL" -> unique, uppercased entries
+const parsePins = (text) => [...new Set(text.split(/[\s,;]+/).map((t) => t.trim().toUpperCase()).filter(Boolean))];
+const isValidPin = (t) => t === "ALL" || /^\d{6}$/.test(t);
 
 const PincodeSurchargePage = () => {
   const [rows, setRows] = useState([]);
@@ -31,13 +35,16 @@ const PincodeSurchargePage = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    const pin = form.pinCode.trim();
-    if (!/^\d{6}$/.test(pin)) return alert("Enter a valid 6-digit pin code");
+    const pins = parsePins(form.pinCode);
+    if (!pins.length) return alert("Enter at least one pin code, or ALL");
+    const invalid = pins.filter((t) => !isValidPin(t));
+    if (invalid.length) return alert(`These aren't valid 6-digit pin codes: ${invalid.slice(0, 5).join(", ")}${invalid.length > 5 ? "…" : ""}`);
     const pct = Number(form.value);
-    if (!Number.isFinite(pct) || pct <= 0) return alert("Enter a surcharge percentage greater than 0");
+    if (form.value === "" || !Number.isFinite(pct) || pct < 0) return alert("Enter a surcharge percentage (0 or more)");
+    if (pins.includes("ALL") && !window.confirm(`This applies ${pct}% to EVERY pin code on the website. Continue?`)) return;
     setSaving(true);
     try {
-      await saveSurcharge(pin, { type: "percent", value: pct, note: form.note, isActive: form.isActive });
+      await saveSurchargesBulk({ pinCodes: pins, type: "percent", value: pct, note: form.note, isActive: form.isActive });
       setForm(EMPTY);
       setEditing(false);
       await load();
@@ -61,7 +68,7 @@ const PincodeSurchargePage = () => {
   };
 
   const handleDelete = async (r) => {
-    if (!window.confirm(`Remove the surcharge for pin code ${r.pinCode}?`)) return;
+    if (!window.confirm(r.pinCode === "ALL" ? "Remove the sitewide surcharge? It stops applying to all orders immediately." : `Remove the surcharge for pin code ${r.pinCode}?`)) return;
     try { await removeSurcharge(r.pinCode); await load(); }
     catch (err) { alert("Failed to remove surcharge"); }
   };
@@ -84,14 +91,18 @@ const PincodeSurchargePage = () => {
 
       <form onSubmit={handleSave} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">Pin code</label>
-          <input
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Pin codes (many allowed) or ALL</label>
+          <textarea
             value={form.pinCode}
-            onChange={(e) => set("pinCode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+            onChange={(e) => set("pinCode", editing ? e.target.value.replace(/[^\dA-Za-z]/g, "").slice(0, 6) : e.target.value)}
             disabled={editing}
-            placeholder="e.g. 194101"
+            rows={3}
+            placeholder={"194101, 194102, 194103\n(comma, space or new line)  —  or type ALL for every pin code"}
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-rose-400 disabled:bg-gray-50"
           />
+          {!editing && form.pinCode.trim() && (
+            <p className="text-[11px] text-gray-400 mt-1">{parsePins(form.pinCode).length} entr{parsePins(form.pinCode).length === 1 ? "y" : "ies"}</p>
+          )}
         </div>
         <div>
           <label className="block text-xs font-semibold text-gray-600 mb-1">Surcharge on product value (%)</label>
@@ -99,7 +110,7 @@ const PincodeSurchargePage = () => {
             type="number" min="0" max="500" step="any"
             value={form.value}
             onChange={(e) => set("value", e.target.value)}
-            placeholder="e.g. 100 (doubles the price)"
+            placeholder="e.g. 100 doubles the price (0 = exempt)"
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-rose-400"
           />
         </div>
@@ -151,9 +162,9 @@ const PincodeSurchargePage = () => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
+                {[...rows].sort((a, b) => (a.pinCode === "ALL" ? -1 : b.pinCode === "ALL" ? 1 : 0)).map((r) => (
                   <tr key={r.pinCode} className="border-t border-gray-50 hover:bg-gray-50">
-                    <td className="px-5 py-3 font-mono font-bold text-gray-800">{r.pinCode}</td>
+                    <td className="px-5 py-3 font-mono font-bold text-gray-800">{r.pinCode === "ALL" ? <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs">ALL PIN CODES</span> : r.pinCode}</td>
                     <td className="px-5 py-3 text-gray-700">{r.type === "flat" ? `₹${r.value}` : `${r.value}%`}</td>
                     <td className="px-5 py-3 text-gray-500">
                       ₹{(r.type === "flat" ? 1500 + r.value : Math.round(1500 + (1500 * r.value) / 100)).toLocaleString("en-IN")}
