@@ -14,6 +14,7 @@ import VendorProfilePage from "./pages/vendors/VendorProfilePage";
 import CouponsPage from "./pages/coupons/CouponsPage";
 import RemindersPage from "./pages/reminders/RemindersPage";
 import PincodeSurchargePage from "./pages/pincodeSurcharge/PincodeSurchargePage";
+import DeliverySurchargePage from "./pages/deliverySurcharge/DeliverySurchargePage";
 import AccessControlPage from "./pages/access/AccessControlPage";
 
 // ── Existing pages ────────────────────────────────────────────────────────────
@@ -96,6 +97,7 @@ const Router = () => {
     { path: "/coupons",         element: <CouponsPage />,        protected: true },
     { path: "/reminders",       element: <RemindersPage />,      protected: true },
     { path: "/pincode-surcharge", element: <PincodeSurchargePage />, protected: true },
+    { path: "/delivery-surcharge", element: <DeliverySurchargePage />, protected: true },
     // ── Bulk Upload ──
     { path: "/upload/flowers", element: <FlowersUpload />, protected: true },
     { path: "/upload/cakes",   element: <CakesUpload />,   protected: true },
