@@ -85,6 +85,7 @@ const NAV = [
   { label: "Vendors",         path: "/vendors"         },
   { label: "Coupons",         path: "/coupons"         },
   { label: "Reminders",       path: "/reminders"       },
+  { label: "Pin Surcharge",   path: "/pincode-surcharge" },
   { label: "Users",           path: "/users"           },
   { label: "Access Control",  path: "/access-control"  },
   { label: "Surprise Orders", path: "/surprise-orders" },
