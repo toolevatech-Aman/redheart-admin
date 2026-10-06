@@ -41,7 +41,7 @@ const PincodeSurchargePage = () => {
     if (invalid.length) return alert(`These aren't valid 6-digit pin codes: ${invalid.slice(0, 5).join(", ")}${invalid.length > 5 ? "…" : ""}`);
     const pct = Number(form.value);
     if (form.value === "" || !Number.isFinite(pct) || pct < 0) return alert("Enter a surcharge percentage (0 or more)");
-    if (pins.includes("ALL") && !window.confirm(`This applies ${pct}% to EVERY pin code on the website. Continue?`)) return;
+    if (pins.includes("ALL") && !window.confirm(`This adds ${pct}% on top of every pin code's existing surcharge. Continue?`)) return;
     setSaving(true);
     try {
       await saveSurchargesBulk({ pinCodes: pins, type: "percent", value: pct, note: form.note, isActive: form.isActive });
@@ -81,7 +81,7 @@ const PincodeSurchargePage = () => {
             <MapPin className="w-6 h-6 text-rose-500" /> Pin Code Surcharge
           </h2>
           <p className="text-xs text-gray-400 mt-0.5">
-            Add a % on the product value for remote pin codes where products cost more. Shown at checkout with a note to the customer.
+            Add a % on the product value for remote pin codes where products cost more. A pin code's own rule and the ALL rule add together (100% + ALL 30% = 130% extra). Shown at checkout with a note to the customer.
           </p>
         </div>
         <button onClick={load} disabled={loading} className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
@@ -110,7 +110,7 @@ const PincodeSurchargePage = () => {
             type="number" min="0" max="500" step="any"
             value={form.value}
             onChange={(e) => set("value", e.target.value)}
-            placeholder="e.g. 100 doubles the price (0 = exempt)"
+            placeholder="e.g. 100 (doubles the price)"
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-rose-400"
           />
         </div>
