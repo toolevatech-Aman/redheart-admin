@@ -16,6 +16,7 @@ import RemindersPage from "./pages/reminders/RemindersPage";
 import PincodeSurchargePage from "./pages/pincodeSurcharge/PincodeSurchargePage";
 import DeliverySurchargePage from "./pages/deliverySurcharge/DeliverySurchargePage";
 import AccessControlPage from "./pages/access/AccessControlPage";
+import ThemesPage from "./pages/themes/ThemesPage";
 
 // ── Existing pages ────────────────────────────────────────────────────────────
 const Home            = lazy(() => import("./pages/home/home"));
@@ -98,6 +99,7 @@ const Router = () => {
     { path: "/reminders",       element: <RemindersPage />,      protected: true },
     { path: "/pincode-surcharge", element: <PincodeSurchargePage />, protected: true },
     { path: "/delivery-surcharge", element: <DeliverySurchargePage />, protected: true },
+    { path: "/themes",          element: <ThemesPage />,         protected: true },
     // ── Bulk Upload ──
     { path: "/upload/flowers", element: <FlowersUpload />, protected: true },
     { path: "/upload/cakes",   element: <CakesUpload />,   protected: true },

@@ -87,6 +87,7 @@ const NAV = [
   { label: "Reminders",       path: "/reminders"       },
   { label: "Pin Surcharge",   path: "/pincode-surcharge" },
   { label: "Delivery Surcharge", path: "/delivery-surcharge" },
+  { label: "Site Themes",     path: "/themes"          },
   { label: "Users",           path: "/users"           },
   { label: "Access Control",  path: "/access-control"  },
   { label: "Surprise Orders", path: "/surprise-orders" },
