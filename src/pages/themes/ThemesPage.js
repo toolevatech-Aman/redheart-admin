@@ -11,6 +11,8 @@ const EFFECTS = [
   { value: "", label: "None (colour and banner only)" },
   { value: "durga", label: "Durga Puja: glowing eyes, alpana border, falling shiuli petals" },
   { value: "holi", label: "Holi: colour bursts from the corners, rising gulal" },
+  { value: "diwali", label: "Diwali: glowing diya, diya border, rising sparks, fireworks" },
+  { value: "christmas", label: "Christmas: snow curtain, twinkling lights, falling snowflakes" },
 ];
 const STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
 const STATUS_STYLE = {

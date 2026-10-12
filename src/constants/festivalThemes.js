@@ -34,14 +34,14 @@ const RULES = {
 };
 
 // Festivals that have a full festive effect (artwork in the storefront). Others get colour + banner only.
-export const FX_STYLES = { "durga-puja": "durga", holi: "holi" };
+export const FX_STYLES = { "durga-puja": "durga", holi: "holi", diwali: "diwali", christmas: "christmas" };
 
 const f = (key, name, primary, text, annBg, annColor, date = null) => ({ key, name, primary, text, annBg, annColor, date, style: FX_STYLES[key] || "" });
 
 export const FESTIVALS = [
   f("durga-puja", "Durga Puja", "#b91c1c", "Shubho Durga Puja from RedHeart", "#7f1d1d", "#fef3c7"),
   f("karwa-chauth", "Karwa Chauth", "#be123c", "Happy Karwa Chauth - gifts for your forever person", "#881337", "#ffffff"),
-  f("diwali", "Diwali", "#c2410c", "Happy Diwali from RedHeart - gifts that light up their day", "#7c2d12", "#fde68a"),
+  f("diwali", "Diwali", "#c2410c", "Happy Diwali from RedHeart - gifts that light up their day", "#1e1b4b", "#fcd34d"),
   f("bhai-dooj", "Bhai Dooj", "#be185d", "Happy Bhai Dooj - send a gift to your brother or sister", "#831843", "#ffffff"),
   f("chhath-puja", "Chhath Puja", "#ea580c", "Chhath Puja ki hardik shubhkamnayein", "#7c2d12", "#ffffff"),
   f("christmas", "Christmas", "#15803d", "Merry Christmas from RedHeart", "#991b1b", "#ffffff", { m: 12, d: 25 }),
