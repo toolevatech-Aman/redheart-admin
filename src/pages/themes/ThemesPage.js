@@ -152,6 +152,10 @@ const ThemesPage = () => {
     catch { alert("Failed to delete theme"); }
   };
 
+  const liveRows = rows.filter((t) => t.status === "live");
+  const winnerId = [...liveRows].sort((a, b) =>
+    (new Date(b.startsAt || 0) - new Date(a.startsAt || 0)) || (new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)))[0]?._id;
+
   const lowContrast = preview && preview.contrast < 4.5;
 
   return (
@@ -277,33 +281,38 @@ const ThemesPage = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left text-gray-500 uppercase text-xs tracking-wide">
-                  <th className="px-5 py-3">Theme</th>
-                  <th className="px-5 py-3">Palette</th>
-                  <th className="px-5 py-3">Banner</th>
-                  <th className="px-5 py-3">Effect</th>
-                  <th className="px-5 py-3">Window (IST)</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Actions</th>
+                  <th className="px-3 py-3">Theme</th>
+                  <th className="px-3 py-3">Palette</th>
+                  <th className="px-3 py-3">Banner</th>
+                  <th className="px-3 py-3">Effect</th>
+                  <th className="px-3 py-3">Window (IST)</th>
+                  <th className="px-3 py-3">Status</th>
+                  <th className="px-3 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((t) => (
                   <tr key={t._id} className="border-t border-gray-50 hover:bg-gray-50">
-                    <td className="px-5 py-3 font-semibold text-gray-800">{t.name}</td>
-                    <td className="px-5 py-3 min-w-[180px]">{t.scale && <Swatches scale={t.scale} />}</td>
-                    <td className="px-5 py-3 text-gray-500 max-w-[220px] truncate" title={t.announcement?.text}>{t.announcement?.text || "—"}</td>
-                    <td className="px-5 py-3 text-gray-500 capitalize">{t.style || "—"}</td>
-                    <td className="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">{showIst(t.startsAt)} → {showIst(t.endsAt)}</td>
-                    <td className="px-5 py-3">
-                      <button onClick={() => handleToggle(t)} title={t.isEnabled ? "Switch off" : "Switch on"}
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${STATUS_STYLE[t.status] || STATUS_STYLE.off}`}>
-                        {t.status}
-                      </button>
+                    <td className="px-3 py-3 font-semibold text-gray-800">{t.name}</td>
+                    <td className="px-3 py-3 w-32">{t.scale && <Swatches scale={t.scale} />}</td>
+                    <td className="px-3 py-3 text-gray-500 max-w-[150px] truncate" title={t.announcement?.text}>{t.announcement?.text || "—"}</td>
+                    <td className="px-3 py-3 text-gray-500 capitalize">{t.style || "—"}</td>
+                    <td className="px-3 py-3 text-gray-500 text-xs">{showIst(t.startsAt)}<br />→ {showIst(t.endsAt)}</td>
+                    <td className="px-3 py-3">
+                      {t.status === "live" && t._id !== winnerId ? (
+                        <button onClick={() => handleToggle(t)} title="Another live theme started later, so this one is not showing on the site. Click to switch it off."
+                          className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Live, covered</button>
+                      ) : (
+                        <button onClick={() => handleToggle(t)} title={t.isEnabled ? "Switch off" : "Switch on"}
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${STATUS_STYLE[t.status] || STATUS_STYLE.off}`}>
+                          {t.status === "live" ? "Live, showing" : t.status}
+                        </button>
+                      )}
                     </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => handleEdit(t)} title="Edit" className="text-gray-400 hover:text-blue-600"><Pencil className="w-4 h-4" /></button>
-                        <button onClick={() => handleDelete(t)} title="Delete" className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleEdit(t)} className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold border border-gray-300 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-700"><Pencil className="w-3.5 h-3.5" /> Edit</button>
+                        <button onClick={() => handleDelete(t)} className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold border border-gray-300 rounded-md text-gray-700 hover:bg-red-50 hover:text-red-700"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
                       </div>
                     </td>
                   </tr>
