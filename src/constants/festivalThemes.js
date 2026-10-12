@@ -33,7 +33,10 @@ const RULES = {
   easter: (y) => easterPlus(y, 0),
 };
 
-const f = (key, name, primary, text, annBg, annColor, date = null) => ({ key, name, primary, text, annBg, annColor, date });
+// Festivals that have a full festive effect (artwork in the storefront). Others get colour + banner only.
+export const FX_STYLES = { "durga-puja": "durga", holi: "holi" };
+
+const f = (key, name, primary, text, annBg, annColor, date = null) => ({ key, name, primary, text, annBg, annColor, date, style: FX_STYLES[key] || "" });
 
 export const FESTIVALS = [
   f("durga-puja", "Durga Puja", "#b91c1c", "Shubho Durga Puja from RedHeart", "#7f1d1d", "#fef3c7"),

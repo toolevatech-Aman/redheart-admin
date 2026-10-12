@@ -5,8 +5,13 @@ import { fetchThemes, createTheme, updateTheme, removeTheme, previewThemeColour 
 
 const EMPTY = {
   name: "", primary: "#0f766e", announcementText: "", annBg: "#111111", annColor: "#ffffff",
-  startsAt: "", endsAt: "", isEnabled: false,
+  style: "", startsAt: "", endsAt: "", isEnabled: false,
 };
+const EFFECTS = [
+  { value: "", label: "None (colour and banner only)" },
+  { value: "durga", label: "Durga Puja: glowing eyes, alpana border, falling shiuli petals" },
+  { value: "holi", label: "Holi: colour bursts from the corners, rising gulal" },
+];
 const STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
 const STATUS_STYLE = {
   live: "bg-green-100 text-green-700",
@@ -81,6 +86,7 @@ const ThemesPage = () => {
     const body = {
       name: form.name.trim(),
       primary: form.primary,
+      style: form.style,
       announcement: { text: form.announcementText, bg: form.annBg, color: form.annColor },
       startsAt: toIso(form.startsAt),
       endsAt: toIso(form.endsAt),
@@ -111,6 +117,7 @@ const ThemesPage = () => {
       announcementText: fest.text,
       annBg: fest.annBg,
       annColor: fest.annColor,
+      style: fest.style || "",
       startsAt: when ? when.start : "",
       endsAt: when ? when.end : "",
       isEnabled: false,
@@ -122,6 +129,7 @@ const ThemesPage = () => {
       name: t.name, primary: t.primary,
       announcementText: t.announcement?.text || "",
       annBg: t.announcement?.bg || "#111111", annColor: t.announcement?.color || "#ffffff",
+      style: t.style || "",
       startsAt: toLocalInput(t.startsAt), endsAt: toLocalInput(t.endsAt), isEnabled: !!t.isEnabled,
     });
     setEditingId(t._id);
@@ -131,7 +139,7 @@ const ThemesPage = () => {
   const handleToggle = async (t) => {
     try {
       await updateTheme(t._id, {
-        name: t.name, primary: t.primary, announcement: t.announcement,
+        name: t.name, primary: t.primary, style: t.style || "", announcement: t.announcement,
         startsAt: t.startsAt, endsAt: t.endsAt, isEnabled: !t.isEnabled,
       });
       await load();
@@ -221,6 +229,14 @@ const ThemesPage = () => {
           </>
         )}
 
+        <div className="md:col-span-3">
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Festive effect (artwork drawn over the site)</label>
+          <select value={form.style} onChange={(e) => set("style", e.target.value)}
+            className="w-full md:w-96 px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-rose-400">
+            {EFFECTS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}
+          </select>
+          <p className="text-[11px] text-gray-400 mt-1">Plays once per visit and stays subtle afterwards. It is switched off on the cart and checkout pages, and for visitors who prefer reduced motion.</p>
+        </div>
         <div>
           <label className="block text-xs font-semibold text-gray-600 mb-1">Starts (IST, optional)</label>
           <input type="datetime-local" value={form.startsAt} onChange={(e) => set("startsAt", e.target.value)}
@@ -264,6 +280,7 @@ const ThemesPage = () => {
                   <th className="px-5 py-3">Theme</th>
                   <th className="px-5 py-3">Palette</th>
                   <th className="px-5 py-3">Banner</th>
+                  <th className="px-5 py-3">Effect</th>
                   <th className="px-5 py-3">Window (IST)</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3">Actions</th>
@@ -275,6 +292,7 @@ const ThemesPage = () => {
                     <td className="px-5 py-3 font-semibold text-gray-800">{t.name}</td>
                     <td className="px-5 py-3 min-w-[180px]">{t.scale && <Swatches scale={t.scale} />}</td>
                     <td className="px-5 py-3 text-gray-500 max-w-[220px] truncate" title={t.announcement?.text}>{t.announcement?.text || "—"}</td>
+                    <td className="px-5 py-3 text-gray-500 capitalize">{t.style || "—"}</td>
                     <td className="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">{showIst(t.startsAt)} → {showIst(t.endsAt)}</td>
                     <td className="px-5 py-3">
                       <button onClick={() => handleToggle(t)} title={t.isEnabled ? "Switch off" : "Switch on"}
