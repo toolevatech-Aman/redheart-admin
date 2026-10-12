@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Palette, RefreshCw, Trash2, Pencil } from "lucide-react";
+import { FESTIVALS, nextOccurrence } from "../../constants/festivalThemes";
 import { fetchThemes, createTheme, updateTheme, removeTheme, previewThemeColour } from "../../service/themes";
 
 const EMPTY = {
@@ -98,6 +99,24 @@ const ThemesPage = () => {
     setSaving(false);
   };
 
+  const applyFestival = (key) => {
+    const fest = FESTIVALS.find((x) => x.key === key);
+    if (!fest) return;
+    const when = nextOccurrence(fest);
+    setEditingId(null);
+    setForm({
+      ...EMPTY,
+      name: when ? `${fest.name} ${when.start.slice(0, 4)}` : fest.name,
+      primary: fest.primary,
+      announcementText: fest.text,
+      annBg: fest.annBg,
+      annColor: fest.annColor,
+      startsAt: when ? when.start : "",
+      endsAt: when ? when.end : "",
+      isEnabled: false,
+    });
+  };
+
   const handleEdit = (t) => {
     setForm({
       name: t.name, primary: t.primary,
@@ -144,6 +163,15 @@ const ThemesPage = () => {
       </div>
 
       <form onSubmit={handleSave} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-3">
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Start from a festival (optional)</label>
+          <select value="" onChange={(e) => applyFestival(e.target.value)}
+            className="w-full md:w-80 px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-rose-400">
+            <option value="">Choose a festival to pre-fill colour, banner and date…</option>
+            {FESTIVALS.map((x) => <option key={x.key} value={x.key}>{x.name}{x.date ? "" : "  (set the date)"}</option>)}
+          </select>
+          <p className="text-[11px] text-gray-400 mt-1">Fixed-date festivals get their next date filled in (whole day, IST). Festivals that move every year (Diwali, Holi, Eid and so on) come without dates, so set them yourself. Everything stays editable, and it is saved switched off.</p>
+        </div>
         <div>
           <label className="block text-xs font-semibold text-gray-600 mb-1">Theme name</label>
           <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Diwali 2026"
