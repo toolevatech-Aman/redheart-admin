@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search, Phone, Mail, MapPin, Copy, Check, ChevronDown, ChevronUp,
-  Package, IndianRupee, Truck, Clock, RefreshCw, MessageCircle, User, Bell, BellOff, X,
+  Package, IndianRupee, Truck, Clock, RefreshCw, MessageCircle, User, Bell, BellOff, X, Plus,
 } from "lucide-react";
 import { fetchAllOrdersAdmin, updateOrderStatusAdmin } from "../../service/order";
 import AssignVendorModal from "./AssignVendorModal";
@@ -92,6 +93,7 @@ const waLink = (phone) => {
 
 // ── Component ────────────────────────────────────────────────────────────────
 const AdminOrdersFull = () => {
+  const navigate = useNavigate();
   const [orders, setOrders]           = useState([]);
   const [pagination, setPagination]   = useState(null);
   const [stats, setStats]             = useState({ total: 0, revenue: 0, pending: 0, deliverToday: 0, overdue: 0 });
@@ -268,6 +270,12 @@ const AdminOrdersFull = () => {
         <h2 className="text-2xl font-bold text-gray-900">Orders</h2>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => navigate("/orders/new")}
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold"
+          >
+            <Plus className="w-4 h-4" /> Create order
+          </button>
+          <button
             onClick={() => setSoundOn((v) => !v)}
             title={soundOn ? "New-order sound alert: on" : "New-order sound alert: off"}
             className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg ${soundOn ? "border-rose-200 bg-rose-50 text-rose-600" : "border-gray-300 hover:bg-gray-50"}`}
@@ -368,6 +376,11 @@ const AdminOrdersFull = () => {
                       <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-full ${order.paymentMode === "cod" ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"}`}>
                         {(order.paymentMode || "").toUpperCase()}
                       </span>
+                      {order.source === "manual" && (
+                        <span title={`Created by staff${order.orderChannel ? ` · ${order.orderChannel}` : ""}`} className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-violet-100 text-violet-700">
+                          Manual{order.orderChannel ? ` · ${order.orderChannel}` : ""}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-gray-400 mt-1">Placed {fmtDateTime(order.createdAt)}</p>
                   </div>

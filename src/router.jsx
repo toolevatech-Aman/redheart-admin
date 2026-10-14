@@ -4,6 +4,7 @@ import AppLayout from "./comman/app-layout/app-layout";
 import { getAccessLevel, canAccessPath, defaultPathFor } from "./constants/accessControl";
 import AdminPageContentEditor from "./pages/pageContent/pageContent";
 import OrderPage from "./pages/orders/order";
+import CreateOrderPage from "./pages/orders/CreateOrderPage";
 import UsersPage from "./pages/users/UsersPage";
 import SurpriseOrdersPage from "./pages/surpriseOrders/SurpriseOrdersPage";
 import ShayariReviewPage from "./pages/shayariReview/ShayariReviewPage";
@@ -87,6 +88,7 @@ const Router = () => {
     { path: "/category-pages",   element: <CategorySeoManager />,    protected: true },
     { path: "/category-config",  element: <CategoryConfigManager />, protected: true },
     { path: "/orders",        element: <OrderPage />,           protected: true },
+    { path: "/orders/new",    element: <CreateOrderPage />,     protected: true },
     { path: "/users",         element: <UsersPage />,           protected: true },
     { path: "/access-control", element: <AccessControlPage />,  protected: true },
     { path: "/surprise-orders", element: <SurpriseOrdersPage />, protected: true },

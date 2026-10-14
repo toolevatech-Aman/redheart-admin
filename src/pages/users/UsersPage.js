@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search, Phone, Mail, MapPin, ChevronDown, ChevronUp, ShoppingCart,
-  Package, IndianRupee, MessageCircle, User as UserIcon, RefreshCw, Home, Zap,
+  Package, IndianRupee, MessageCircle, User as UserIcon, RefreshCw, Home, Zap, Plus,
 } from "lucide-react";
 import { Get, Patch } from "../../service/axiosService";
 import { ACCESS_LEVELS, ACCESS_LEVEL_LABELS, getAccessLevel } from "../../constants/accessControl";
@@ -63,6 +64,7 @@ const STATUS_STYLES = {
 const PAGE_SIZE = 20;
 
 const UsersPage = () => {
+  const navigate = useNavigate();
   const [users, setUsers]       = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
@@ -310,6 +312,13 @@ const UsersPage = () => {
                   )}
                   {u.totalSpent > 0 && (
                     <span className="text-sm font-bold text-gray-900">{inr(u.totalSpent)}</span>
+                  )}
+                  {u.role !== "admin" && (
+                    <button onClick={() => navigate(`/orders/new?customerId=${encodeURIComponent(u.userId)}`)}
+                      title="Create an order for this customer"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border border-rose-200 text-rose-600 hover:bg-rose-50">
+                      <Plus className="w-3 h-3" /> Create order
+                    </button>
                   )}
                   <button onClick={() => toggle(u._id)} className="text-gray-400 hover:text-gray-700">
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
