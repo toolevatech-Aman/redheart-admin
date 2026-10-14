@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { fetchAllOrdersAdmin, updateOrderStatusAdmin } from "../../service/order";
 import AssignVendorModal from "./AssignVendorModal";
+import PaymentActions from "./PaymentActions";
 
 const POLL_MS = 20000;
 const SEARCH_DEBOUNCE_MS = 400;
@@ -126,9 +127,9 @@ const AdminOrdersFull = () => {
   const soundOnRef  = useRef(true); // mirrors soundOn — the poll interval's closure would otherwise never see toggle updates
   useEffect(() => { soundOnRef.current = soundOn; }, [soundOn]);
 
-  const pushToast = (order) => {
-    const id = order._id || Math.random();
-    setToasts((prev) => [...prev, { id, order }]);
+  const pushToast = (order, kind = "new") => {
+    const id = `${order._id || Math.random()}-${kind}`;
+    setToasts((prev) => [...prev, { id, order, kind }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 8000);
   };
   const dismissToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -176,13 +177,16 @@ const AdminOrdersFull = () => {
         if (!response.success) return;
         const incoming = response.data;
         if (seenIdsRef.current) {
-          const newOnes = incoming.filter((o) => !seenIdsRef.current.has(o._id));
-          if (newOnes.length > 0) {
-            newOnes.forEach(pushToast);
+          // An unpaid order that staff just created isn't "new" to them; they get an alert when it is paid instead.
+          const newOnes = incoming.filter((o) => !seenIdsRef.current.has(o._id) && !(o.source === "manual" && o.paymentStatus === "PENDING"));
+          const paidNow = incoming.filter((o) => seenIdsRef.current.get(o._id) === "PENDING" && o.paymentStatus === "PAID");
+          if (newOnes.length + paidNow.length > 0) {
+            newOnes.forEach((o) => pushToast(o, "new"));
+            paidNow.forEach((o) => pushToast(o, "paid"));
             if (soundOnRef.current) playChime(audioCtxRef.current);
           }
         }
-        seenIdsRef.current = new Set(incoming.map((o) => o._id));
+        seenIdsRef.current = new Map(incoming.map((o) => [o._id, o.paymentStatus]));
       } catch (err) { console.error(err); }
     };
 
@@ -220,6 +224,12 @@ const AdminOrdersFull = () => {
   const toggle = (id) =>
     setExpanded((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
+  const applyPayment = (updated) => {
+    if (!updated?.orderId) return;
+    const keep = ["paymentStatus", "orderStatus", "paymentMode", "paymentLinkId", "paymentLinkUrl", "paymentLinkStatus", "paymentLinkExpiresAt", "paidAt", "paymentChannel", "paymentReference", "razorpayPaymentId"];
+    setOrders((prev) => prev.map((o) => (o.orderId === updated.orderId ? { ...o, ...Object.fromEntries(keep.filter((k) => k in updated).map((k) => [k, updated[k]])) } : o)));
+  };
+
   const copyId = (id) => {
     navigator.clipboard?.writeText(id);
     setCopiedId(id);
@@ -247,11 +257,11 @@ const AdminOrdersFull = () => {
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
       {/* New-order toast stack */}
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80">
-        {toasts.map(({ id, order }) => (
+        {toasts.map(({ id, order, kind }) => (
           <div key={id} className="bg-white border-2 border-rose-200 rounded-xl shadow-lg p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 text-rose-600 font-bold text-sm">
-                <Bell className="w-4 h-4" /> New Order!
+                <Bell className="w-4 h-4" /> {kind === "paid" ? "Payment received!" : "New Order!"}
               </div>
               <button onClick={() => dismissToast(id)} className="text-gray-400 hover:text-gray-700">
                 <X className="w-4 h-4" />
@@ -376,6 +386,9 @@ const AdminOrdersFull = () => {
                       <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-full ${order.paymentMode === "cod" ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"}`}>
                         {(order.paymentMode || "").toUpperCase()}
                       </span>
+                      {order.source === "manual" && order.paymentStatus === "PENDING" && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-700">Unpaid</span>
+                      )}
                       {order.source === "manual" && (
                         <span title={`Created by staff${order.orderChannel ? ` · ${order.orderChannel}` : ""}`} className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-violet-100 text-violet-700">
                           Manual{order.orderChannel ? ` · ${order.orderChannel}` : ""}
@@ -489,6 +502,7 @@ const AdminOrdersFull = () => {
                     {isExpanded ? <>Less <ChevronUp className="w-4 h-4" /></> : <>Details <ChevronDown className="w-4 h-4" /></>}
                   </button>
                 </div>
+                <PaymentActions order={order} phone={custPhone} onUpdated={applyPayment} />
               </div>
 
               {/* ── Expanded detail ── */}

@@ -6,3 +6,6 @@ export const createCustomer = async (body) => (await Post("/orders/admin/custome
 export const searchProducts = async (q) => (await Get("/orders/admin/products", { q })).data;
 export const previewManualOrder = async (body) => (await Post("/orders/admin/manual/preview", body)).data;
 export const createManualOrder = async (body) => (await Post("/orders/admin/manual", body)).data;
+export const createPaymentLink = async (orderId) => (await Post(`/orders/admin/${encodeURIComponent(orderId)}/payment-link`)).data;
+export const refreshPayment = async (orderId) => (await Post(`/orders/admin/${encodeURIComponent(orderId)}/refresh-payment`)).data;
+export const markOrderPaid = async (orderId, body) => (await Post(`/orders/admin/${encodeURIComponent(orderId)}/mark-paid`, body)).data;

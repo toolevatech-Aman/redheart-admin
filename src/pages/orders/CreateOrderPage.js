@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search, Trash2, UserPlus, Check, Copy, X, PackagePlus } from "lucide-react";
+import PaymentActions from "./PaymentActions";
 import {
   searchCustomers, fetchCustomer, createCustomer, searchProducts, previewManualOrder, createManualOrder,
 } from "../../service/manualOrder";
@@ -72,7 +73,7 @@ const CreateOrderPage = () => {
   const [discountReason, setDiscountReason] = useState("");
   const [waive, setWaive] = useState(false);
 
-  const [payMode, setPayMode] = useState("COD");
+  const [payMode, setPayMode] = useState("PAYMENT_LINK");
   const [payChannel, setPayChannel] = useState("UPI");
   const [payRef, setPayRef] = useState("");
   const [orderChannel, setOrderChannel] = useState("WhatsApp");
@@ -84,6 +85,7 @@ const CreateOrderPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [created, setCreated] = useState(null);
+  const [createdMeta, setCreatedMeta] = useState({ phone: "", linkError: "" });
   const [copied, setCopied] = useState(false);
   const token = useRef("");
   const newToken = () => { token.current = (window.crypto?.randomUUID?.() || `t-${Date.now()}-${Math.random().toString(36).slice(2)}`); };
@@ -178,6 +180,7 @@ const CreateOrderPage = () => {
     setError("");
     if (!customer) return setError("Choose a customer first");
     if (!items.length) return setError("Add at least one product");
+    if (payMode === "PAYMENT_LINK" && !window.confirm(`Create this order and a payment link for ${inr(preview?.total)}?`)) return;
     if (payMode === "COD" && !window.confirm(`Create this order as Cash on Delivery for ${inr(preview?.total)}?`)) return;
     if (payMode === "PAID_OFFLINE" && !window.confirm(`Mark this order as already PAID (${payChannel}) for ${inr(preview?.total)}?`)) return;
     setSaving(true);
@@ -186,6 +189,7 @@ const CreateOrderPage = () => {
         ...payload, paymentMode: payMode, paymentChannel: payChannel, paymentReference: payRef,
         orderChannel, orderNote, adminNote, clientToken: token.current,
       });
+      setCreatedMeta({ phone: customer?.phone || "", linkError: r.paymentLinkError || "" });
       setCreated(r.data);
     } catch (err) { setError(apiMessage(err, "Could not create the order")); }
     setSaving(false);
@@ -193,8 +197,8 @@ const CreateOrderPage = () => {
 
   function reset() {
     setCustomer(null); setItems([]); setAddr(EMPTY_ADDR); chooseOption("standard"); setDate(todayIst());
-    setCoupon(""); setDiscount(""); setDiscountReason(""); setWaive(false); setPayMode("COD"); setPayRef("");
-    setOrderNote(""); setAdminNote(""); setPreview(null); setError(""); setCreated(null); newToken();
+    setCoupon(""); setDiscount(""); setDiscountReason(""); setWaive(false); setPayMode("PAYMENT_LINK"); setPayRef("");
+    setOrderNote(""); setAdminNote(""); setPreview(null); setError(""); setCreated(null); setCreatedMeta({ phone: "", linkError: "" }); newToken();
     navigate("/orders/new", { replace: true });
   }
 
@@ -211,7 +215,10 @@ const CreateOrderPage = () => {
               {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
             </button>
           </p>
-          <p className="text-sm text-gray-500 mt-1">{inr(created.totalPrice)} · {created.paymentStatus === "PAID" ? "Paid" : "Cash on delivery"} · {created.cartItems?.length} item{created.cartItems?.length === 1 ? "" : "s"}</p>
+          <p className="text-sm text-gray-500 mt-1">{inr(created.totalPrice)} · {created.paymentStatus === "PAID" ? "Paid" : created.paymentStatus === "PENDING" ? "Awaiting payment" : "Cash on delivery"} · {created.cartItems?.length} item{created.cartItems?.length === 1 ? "" : "s"}</p>
+          <div className="text-left">
+            <PaymentActions order={created} phone={createdMeta.phone} initialError={createdMeta.linkError} onUpdated={(o) => setCreated((c) => ({ ...c, ...o }))} />
+          </div>
           <div className="flex gap-2 justify-center mt-5">
             <button onClick={() => navigate("/orders")} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">View in Orders</button>
             <button onClick={reset} className="px-4 py-2 text-sm bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold">Create another order</button>
@@ -376,11 +383,11 @@ const CreateOrderPage = () => {
           {/* 5 · payment */}
           <Section n="5" title="Payment and notes">
             <div className="flex flex-wrap gap-2">
-              {[["COD", "Cash on delivery"], ["PAID_OFFLINE", "Already paid"]].map(([v, l]) => (
+              {[["PAYMENT_LINK", "Payment link"], ["COD", "Cash on delivery"], ["PAID_OFFLINE", "Already paid"]].map(([v, l]) => (
                 <button key={v} onClick={() => setPayMode(v)} className={`px-4 py-2 text-sm rounded-lg border ${payMode === v ? "border-rose-400 bg-rose-50 text-rose-700 font-semibold" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>{l}</button>
               ))}
             </div>
-            <p className="text-[11px] text-gray-400 mt-1">Payment links are coming in the next step.</p>
+            <p className="text-[11px] text-gray-400 mt-1">{payMode === "PAYMENT_LINK" ? "The customer pays online (UPI, card, net banking) from a link you share. The order is marked paid automatically." : payMode === "COD" ? "Payment is collected on delivery." : "The money has already been received."}</p>
             {payMode === "PAID_OFFLINE" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 <Field label="Received by"><select className={inputCls} value={payChannel} onChange={(e) => setPayChannel(e.target.value)}>{PAY_CHANNELS.map((c) => <option key={c}>{c}</option>)}</select></Field>
@@ -425,7 +432,7 @@ const CreateOrderPage = () => {
             {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
             <button disabled={!canCreate} onClick={submit}
               className="w-full mt-4 px-4 py-2.5 text-sm bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
-              {saving ? "Creating…" : payMode === "COD" ? "Create order (COD)" : "Create order (paid)"}
+              {saving ? "Creating…" : payMode === "PAYMENT_LINK" ? "Create order and payment link" : payMode === "COD" ? "Create order (COD)" : "Create order (paid)"}
             </button>
           </div>
         </aside>
