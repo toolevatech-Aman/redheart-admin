@@ -15,6 +15,8 @@ export const SEO_PATHS = [
 
 export const CATEGORY_PATHS = [
   "/category-config",
+  "/products",
+  "/products/:productId",
   "/addProduct",
   "/addProductManual",
   "/editProduct",

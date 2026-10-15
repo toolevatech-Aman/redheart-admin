@@ -12,6 +12,12 @@ const NAV = [
     label: "Product Management",
     children: [
       {
+        group: "🗂 Product Hub",
+        items: [
+          { label: "All Products (search & edit)", path: "/products" },
+        ],
+      },
+      {
         group: "➕ Add Single Product",
         items: [
           { label: "Add Product (Manual)", path: "/addProductManual" },
