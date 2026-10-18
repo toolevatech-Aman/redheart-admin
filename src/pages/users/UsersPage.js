@@ -356,6 +356,7 @@ const UsersPage = () => {
                               <p className="text-xs text-gray-500">
                                 {item.variant_name ? `${item.variant_name} · ` : ""}Qty {item.quantity} · {inr(item.selling_price)}
                               </p>
+                              {item.cake_message && <p className="text-xs text-amber-800">🎂 “{item.cake_message}”</p>}
                             </div>
                           </div>
                         ))}

@@ -461,6 +461,11 @@ const AdminOrdersFull = () => {
                           {item.variant_name ? `${item.variant_name} · ` : ""}Qty {item.quantity} · {inr(item.selling_price)}
                           {item.add_ons?.length > 0 && ` · ${item.add_ons.length} add-on${item.add_ons.length > 1 ? "s" : ""}`}
                         </p>
+                        {item.cake_message && (
+                          <p className="mt-1 inline-block rounded bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                            🎂 Message on cake: “{item.cake_message}”
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -303,6 +303,9 @@ const ItemAssignRow = ({ item, recs, loading, existing, onAssign, orderId, onCos
         <div className="min-w-0">
           <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
           <p className="text-xs text-gray-400">Qty {item.quantity} · {item.variant_name || ""}</p>
+          {item.cake_message && (
+            <p className="text-[11px] font-semibold text-amber-800 mt-0.5">🎂 Message on cake: “{item.cake_message}”</p>
+          )}
           {addOns.length > 0 && (
             <p className="text-[11px] text-purple-500 mt-0.5">
               + {addOns.map((a) => `${a.name} ×${a.quantity || 1}`).join(", ")}
