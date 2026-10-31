@@ -386,6 +386,11 @@ const AdminOrdersFull = () => {
                       <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-full ${order.paymentMode === "cod" ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"}`}>
                         {(order.paymentMode || "").toUpperCase()}
                       </span>
+                      {order.customerType === "repeat" ? (
+                        <span title={`This customer's order number ${order.orderSeq}`} className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-rose-100 text-rose-700">Repeat · #{order.orderSeq}</span>
+                      ) : (
+                        <span title="This customer's first order" className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-purple-100 text-purple-700">New customer</span>
+                      )}
                       {order.source === "manual" && order.paymentStatus === "PENDING" && (
                         <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-700">Unpaid</span>
                       )}

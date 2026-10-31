@@ -113,6 +113,8 @@ const UsersPage = () => {
     const matches = users.filter((u) => {
       if (filter === "ordered" && !(u.orderCount > 0)) return false;
       if (filter === "not_ordered" && u.orderCount > 0) return false;
+      if (filter === "new_customer" && u.customerType !== "new") return false;
+      if (filter === "repeat_customer" && u.customerType !== "repeat") return false;
       if (filter === "cart" && !(u.cartItems?.length > 0)) return false;
       if (filter === "buy_now" && !u.buyNowItem) return false;
       if (filter === "address" && !(u.addresses?.length > 0)) return false;
@@ -211,6 +213,8 @@ const UsersPage = () => {
           <option value="all">All Users</option>
           <option value="ordered">Ordered</option>
           <option value="not_ordered">Never Ordered</option>
+          <option value="new_customer">New customers (1 order)</option>
+          <option value="repeat_customer">Repeat customers (2+ orders)</option>
           <option value="cart">Has Items in Cart</option>
           <option value="buy_now">Has Buy Now Intent</option>
           <option value="address">Has Saved Address</option>
@@ -296,6 +300,12 @@ const UsersPage = () => {
                     >
                       Active {fmtRelative(u.lastActivityAt)}
                     </span>
+                  )}
+                  {u.customerType === "repeat" && (
+                    <span title={`${u.paidOrderCount} paid orders`} className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700">Repeat</span>
+                  )}
+                  {u.customerType === "new" && (
+                    <span title="1 paid order so far" className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">New</span>
                   )}
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${u.orderCount > 0 ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-600"}`}>
                     {u.orderCount > 0 ? `${u.orderCount} order${u.orderCount > 1 ? "s" : ""}` : "No orders"}
