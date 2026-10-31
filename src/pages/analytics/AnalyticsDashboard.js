@@ -474,11 +474,11 @@ const AnalyticsDashboard = () => {
 // ── Location table (state / city) ────────────────────────────────────────────
 const LOC_COLS = {
   orders: [
-    ["orders", "Orders"], ["revenue", "Revenue"], ["aov", "Avg order"], ["buyers", "Buyers"],
+    ["orders", "Orders"], ["revenue", "Revenue"], ["aov", "Avg order"], ["buyers", "Buyers"], ["buyerPct", "Buyer / signup %"],
     ["newBuyers", "New buyers"], ["returningBuyers", "Returning"], ["newOrders", "New orders"], ["repeatOrders", "Repeat orders"], ["signups", "Signups"],
   ],
   users: [
-    ["signups", "Signups"], ["buyers", "Buyers"], ["newBuyers", "New buyers"], ["returningBuyers", "Returning"], ["orders", "Orders"], ["revenue", "Revenue"],
+    ["signups", "Signups"], ["buyers", "Buyers"], ["buyerPct", "Buyer / signup %"], ["newBuyers", "New buyers"], ["returningBuyers", "Returning"], ["orders", "Orders"], ["revenue", "Revenue"],
   ],
 };
 const MONEY = new Set(["revenue", "aov"]);
@@ -488,7 +488,12 @@ function LocationTable({ rows, mode = "orders", initialKind = "state", limit }) 
   const [q, setQ] = useState("");
   const [sort, setSort] = useState({ key: mode === "users" ? "signups" : "orders", dir: "desc" });
   const cols = LOC_COLS[mode];
-  const list = rows?.[kind === "state" ? "byState" : "byCity"] || [];
+  // Buyer / signup % = buyers ÷ signups. Buyers are placed by delivery address and signups by saved
+  // address, and buyers may have signed up before this period, so it can pass 100%. No signups → blank.
+  const list = useMemo(
+    () => (rows?.[kind === "state" ? "byState" : "byCity"] || []).map((r) => ({ ...r, buyerPct: r.signups ? (r.buyers / r.signups) * 100 : null })),
+    [rows, kind]
+  );
 
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -496,7 +501,7 @@ function LocationTable({ rows, mode = "orders", initialKind = "state", limit }) 
       ? list.filter((r) => `${r.city || ""} ${r.state || ""}`.toLowerCase().includes(needle))
       : list;
     const sorted = [...filtered].sort((a, b) => {
-      const d = (b[sort.key] ?? 0) - (a[sort.key] ?? 0);
+      const d = (b[sort.key] ?? -1) - (a[sort.key] ?? -1);
       return (sort.dir === "desc" ? d : -d) || (b.orders - a.orders);
     });
     return limit ? sorted.slice(0, limit) : sorted;
@@ -509,12 +514,13 @@ function LocationTable({ rows, mode = "orders", initialKind = "state", limit }) 
   }, [list]);
 
   const sortBy = (key) => setSort((p) => (p.key === key ? { key, dir: p.dir === "desc" ? "asc" : "desc" } : { key, dir: "desc" }));
-  const cell = (r, key) => (MONEY.has(key) ? inr(r[key]) : (r[key] ?? 0));
+  const cell = (r, key) =>
+    key === "buyerPct" ? (r.buyerPct == null ? "—" : `${Math.round(r.buyerPct)}%`) : MONEY.has(key) ? inr(r[key]) : (r[key] ?? 0);
 
   const exportCsv = () =>
     downloadCsv(`analytics-${kind}.csv`,
       [kind === "state" ? "State" : "City", ...(kind === "city" ? ["State"] : []), ...cols.map(([, l]) => l)],
-      shown.map((r) => [kind === "state" ? r.state : r.city, ...(kind === "city" ? [r.state] : []), ...cols.map(([k]) => Math.round(r[k] ?? 0))]));
+      shown.map((r) => [kind === "state" ? r.state : r.city, ...(kind === "city" ? [r.state] : []), ...cols.map(([k]) => (k === "buyerPct" ? (r.buyerPct == null ? "" : `${Math.round(r.buyerPct)}%`) : Math.round(r[k] ?? 0)))]));
 
   return (
     <>
@@ -542,7 +548,7 @@ function LocationTable({ rows, mode = "orders", initialKind = "state", limit }) 
               <th className="py-2 pr-4 font-medium">{kind === "state" ? "State" : "City"}</th>
               {kind === "city" && <th className="py-2 pr-4 font-medium">State</th>}
               {cols.map(([k, l]) => (
-                <th key={k} onClick={() => sortBy(k)} className="py-2 pr-4 font-medium cursor-pointer select-none whitespace-nowrap hover:text-gray-600">
+                <th key={k} onClick={() => sortBy(k)} title={k === "buyerPct" ? "Buyers ÷ signups in this period. Can pass 100% because buyers may have signed up earlier." : undefined} className="py-2 pr-4 font-medium cursor-pointer select-none whitespace-nowrap hover:text-gray-600">
                   {l}{sort.key === k ? (sort.dir === "desc" ? " ↓" : " ↑") : ""}
                 </th>
               ))}
