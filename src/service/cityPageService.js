@@ -48,3 +48,6 @@ export const deleteCity = (id) =>
  */
 export const regenerateCities = (category) =>
   Post(`/city/cities/regenerate/${category}`, {});
+
+/** One full city page (footer + FAQs) for the edit modal. */
+export const getCityById = (id) => Get(`/city/city-by-id/${id}`);

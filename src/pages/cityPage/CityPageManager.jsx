@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import CityModal from "./CityModal";
 import {
   getCities,
+  getCityById,
   addCitiesBulk,
   updateCity,
   deleteCity,
@@ -94,6 +95,16 @@ const CityPageManager = () => {
     setBulkResult(null);
     setBulkInput("");
   }, [activeCategory, loadCities]);
+
+  // The list leaves out footers and FAQs (they are big), so load the full page before editing
+  const openCity = async (city) => {
+    try {
+      const res = await getCityById(city._id);
+      setEditingCity(res.data);
+    } catch (err) {
+      alert(err?.response?.data?.message || "Could not open this city page");
+    }
+  };
 
   // ── Tab change ─────────────────────────────────────────────────────────────
   const handleTabChange = (cat) => {
@@ -317,13 +328,13 @@ const CityPageManager = () => {
                         }
                       </td>
                       <td className="px-4 py-3">
-                        {city.faqs && city.faqs.length > 0
-                          ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ {city.faqs.length}</span>
+                        {(city.faqCount ?? city.faqs?.length ?? 0) > 0
+                          ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ {city.faqCount ?? city.faqs.length}</span>
                           : <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600 font-medium">Empty</span>
                         }
                       </td>
                       <td className="px-4 py-3">
-                        {city.footerContent && city.footerContent.trim().length > 0
+                        {(city.hasFooter ?? !!city.footerContent?.trim())
                           ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ Set</span>
                           : <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">— None</span>
                         }
@@ -331,7 +342,7 @@ const CityPageManager = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setEditingCity(city)}
+                            onClick={() => openCity(city)}
                             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${accent.outline}`}
                           >
                             Edit SEO
