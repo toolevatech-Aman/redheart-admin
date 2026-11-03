@@ -4,8 +4,8 @@ import { Get, Post, Put, Delete } from "./axiosService";
  * Fetch all city pages for a given category, sorted by cityName.
  * @param {string} category  "Flowers" | "Cakes" | "Plants"
  */
-export const getCities = (category) =>
-  Get(`/city/cities/${category}`);
+export const getCities = (category, params = {}) =>
+  Get(`/city/cities/${category}`, params);
 
 /**
  * Add a single city page.

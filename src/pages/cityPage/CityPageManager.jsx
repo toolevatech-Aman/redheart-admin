@@ -53,11 +53,20 @@ function Spinner() {
   );
 }
 
+const PAGE_SIZE = 50;
+
 // ── Main Component ────────────────────────────────────────────────────────────
 const CityPageManager = () => {
   const [activeCategory, setActiveCategory] = useState("Flowers");
   const [cities,         setCities]         = useState([]);
   const [loading,        setLoading]        = useState(false);
+  const [summary,        setSummary]        = useState(null);
+  const [searchInput,    setSearchInput]    = useState("");
+  const [search,         setSearch]         = useState("");
+  const [filter,         setFilter]         = useState("");
+  const [page,           setPage]           = useState(1);
+  const [pages,          setPages]          = useState(1);
+  const [total,          setTotal]          = useState(0);
 
   // Bulk upload state
   const [bulkInput,      setBulkInput]      = useState("");
@@ -77,24 +86,54 @@ const CityPageManager = () => {
   const accent       = ACCENT[categoryMeta.accent];
 
   // ── Load cities ────────────────────────────────────────────────────────────
-  const loadCities = useCallback(async (cat) => {
+  // The list is paged, searchable and filterable on the server, and carries no footer/FAQ text
+  const loadCities = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await getCities(cat);
-      setCities(res.data || []);
+      const res = await getCities(activeCategory, { search, filter, page, limit: PAGE_SIZE });
+      const d = res.data || {};
+      setCities(d.cities || []);
+      setSummary(d.summary || null);
+      setTotal(d.total || 0);
+      setPages(d.pages || 1);
     } catch (err) {
       console.error("loadCities error", err);
       setCities([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeCategory, search, filter, page]);
+
+  useEffect(() => { loadCities(); }, [loadCities]);
 
   useEffect(() => {
-    loadCities(activeCategory);
     setBulkResult(null);
     setBulkInput("");
-  }, [activeCategory, loadCities]);
+    setSearchInput(""); setSearch(""); setFilter(""); setPage(1);
+  }, [activeCategory]);
+
+  // search box: wait for a pause in typing, then go back to page 1
+  useEffect(() => {
+    const id = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 350);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
+  const exportCsv = async () => {
+    try {
+      const res = await getCities(activeCategory, { search, filter, limit: "all" });
+      const rows = res.data?.cities || [];
+      const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const csv = ["City,State,URL,FAQs,Footer"].concat(
+        rows.map((c) => [c.cityName, c.state, c.url, c.faqCount, c.footerLen > 0 ? "Yes" : "No"].map(esc).join(","))
+      ).join("\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+      a.download = `city-pages-${activeCategory.toLowerCase()}${filter ? `-${filter}` : ""}.csv`;
+      a.click();
+    } catch (err) {
+      alert(err?.response?.data?.message || "Export failed");
+    }
+  };
 
   // The list leaves out footers and FAQs (they are big), so load the full page before editing
   const openCity = async (city) => {
@@ -128,7 +167,7 @@ const CityPageManager = () => {
       const { added = [], skipped = [], errors = [] } = res.data;
       setBulkResult({ added, skipped, errors });
       if (added.length > 0) {
-        await loadCities(activeCategory);
+        await loadCities();
       }
       setBulkInput("");
     } catch (err) {
@@ -157,7 +196,7 @@ const CityPageManager = () => {
     try {
       const res = await regenerateCities(activeCategory);
       setRegenResult(`✅ ${res.data.message}`);
-      await loadCities(activeCategory);
+      await loadCities();
     } catch (err) {
       setRegenResult(`❌ ${err?.response?.data?.message || "Regeneration failed"}`);
     } finally {
@@ -169,7 +208,7 @@ const CityPageManager = () => {
   const handleSave = async (id, formData) => {
     try {
       await updateCity(id, formData);
-      await loadCities(activeCategory);
+      await loadCities();
       setEditingCity(null);
     } catch (err) {
       alert(err?.response?.data?.message || "Save failed");
@@ -278,13 +317,42 @@ const CityPageManager = () => {
         )}
       </div>
 
+      {/* Summary, search and filters */}
+      {summary && (
+        <div className="mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-3">
+            {[
+              ["", "All cities", summary.total, "text-gray-800"],
+              ["withFooter", "With footer", summary.withFooter, "text-green-700"],
+              ["noFooter", "No footer", summary.noFooter, "text-red-600"],
+              ["faqFull", "10 FAQs", summary.faqFull, "text-green-700"],
+              ["faqPartial", "Fewer than 10 FAQs", summary.faqPartial, "text-amber-600"],
+              ["noFaq", "No FAQs", summary.noFaq, "text-red-600"],
+            ].map(([key, label, n, color]) => (
+              <button key={label} onClick={() => { setFilter(key); setPage(1); }}
+                className={`text-left bg-white rounded-lg border px-3 py-2 shadow-sm hover:border-gray-400 ${filter === key ? "border-gray-800 ring-1 ring-gray-800" : "border-gray-200"}`}>
+                <div className={`text-xl font-bold ${color}`}>{n}</div>
+                <div className="text-xs text-gray-500">{label}</div>
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search city or state…"
+              className="flex-1 min-w-[200px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300" />
+            <button onClick={exportCsv} className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-50">
+              Export list (CSV)
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* City table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {loading ? (
           <Spinner />
         ) : cities.length === 0 ? (
           <div className="py-16 text-center text-gray-400 text-sm">
-            No cities added for {activeCategory} yet.
+            {filter || search ? "No cities match." : `No cities added for ${activeCategory} yet.`}
           </div>
         ) : (
           <>
@@ -328,13 +396,13 @@ const CityPageManager = () => {
                         }
                       </td>
                       <td className="px-4 py-3">
-                        {(city.faqCount ?? city.faqs?.length ?? 0) > 0
-                          ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ {city.faqCount ?? city.faqs.length}</span>
+                        {city.faqCount > 0
+                          ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ {city.faqCount}</span>
                           : <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600 font-medium">Empty</span>
                         }
                       </td>
                       <td className="px-4 py-3">
-                        {(city.hasFooter ?? !!city.footerContent?.trim())
+                        {city.footerLen > 0
                           ? <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ Set</span>
                           : <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">— None</span>
                         }
@@ -365,7 +433,13 @@ const CityPageManager = () => {
             </div>
 
             <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
-              Showing {cities.length} {cities.length === 1 ? "city" : "cities"}
+              <div className="flex items-center justify-between">
+                <span>{total} {total === 1 ? "city" : "cities"}{filter || search ? " match" : ""} · page {page} of {pages}</span>
+                <span className="flex gap-2">
+                  <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1 rounded border border-gray-300 text-gray-600 disabled:opacity-40">Previous</button>
+                  <button disabled={page >= pages} onClick={() => setPage((p) => p + 1)} className="px-3 py-1 rounded border border-gray-300 text-gray-600 disabled:opacity-40">Next</button>
+                </span>
+              </div>
             </div>
           </>
         )}
