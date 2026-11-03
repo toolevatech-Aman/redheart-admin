@@ -7,6 +7,7 @@ import {
 import { fetchAllOrdersAdmin, updateOrderStatusAdmin } from "../../service/order";
 import AssignVendorModal from "./AssignVendorModal";
 import PaymentActions from "./PaymentActions";
+import ExtraCharges from "./ExtraCharges";
 
 const POLL_MS = 20000;
 const SEARCH_DEBOUNCE_MS = 400;
@@ -224,6 +225,8 @@ const AdminOrdersFull = () => {
   const toggle = (id) =>
     setExpanded((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
+  const applyExtra = (u) => setOrders((prev) => prev.map((o) => (o.orderId === u.orderId ? { ...o, totalPrice: u.totalPrice, extraAmount: u.extraAmount, extraCharges: u.extraCharges } : o)));
+
   const applyPayment = (updated) => {
     if (!updated?.orderId) return;
     const keep = ["paymentStatus", "orderStatus", "paymentMode", "paymentLinkId", "paymentLinkUrl", "paymentLinkStatus", "paymentLinkExpiresAt", "paidAt", "paymentChannel", "paymentReference", "razorpayPaymentId"];
@@ -405,6 +408,7 @@ const AdminOrdersFull = () => {
 
                   <div className="text-right">
                     <p className="text-lg font-bold text-gray-900">{inr(order.totalPrice)}</p>
+                    {Number(order.extraAmount) > 0 && <p className="text-[11px] font-semibold text-blue-600">incl. {inr(order.extraAmount)} extra</p>}
                     <p className="text-xs text-gray-500 flex items-center justify-end gap-1">
                       <Truck className="w-3 h-3" />
                       {fmtDeliveryDate(order.deliveryDate)}
@@ -544,6 +548,11 @@ const AdminOrdersFull = () => {
                           <span>Coupon ({order.coupanApplied})</span><span>−{inr(order.coupanDiscount)}</span>
                         </div>
                       )}
+                      {Number(order.extraAmount) > 0 && (
+                        <div className="flex justify-between text-blue-700">
+                          <span>Extra amount received</span><span>+{inr(order.extraAmount)}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between font-bold text-gray-900 border-t border-gray-200 pt-1 mt-1">
                         <span>Total</span><span>{inr(order.totalPrice)}</span>
                       </div>
@@ -557,6 +566,8 @@ const AdminOrdersFull = () => {
                         </div>
                       )}
                     </div>
+
+                    <ExtraCharges order={order} onUpdated={applyExtra} />
 
                     {/* Add-ons detail */}
                     {(order.cartItems || []).some((i) => i.add_ons?.length > 0) && (

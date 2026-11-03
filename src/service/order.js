@@ -1,4 +1,4 @@
-import { Get, Patch } from "./axiosService";
+import { Get, Patch, Post, Delete } from "./axiosService";
 
 /**
  * Utility to build query string from filters
@@ -48,3 +48,7 @@ export const updateOrderStatusAdmin = async (orderId, status) => {
     return null;
   }
 };
+
+/** Extra money collected from the customer (raises the order total everywhere) */
+export const addExtraCharge = async (orderId, body) => (await Post(`/orders/admin/${orderId}/extra-charge`, body)).data;
+export const removeExtraCharge = async (orderId, chargeId) => (await Delete(`/orders/admin/${orderId}/extra-charge/${chargeId}`)).data;
