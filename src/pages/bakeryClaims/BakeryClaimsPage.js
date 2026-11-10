@@ -10,6 +10,10 @@ const STATUS_STYLES = {
   active: "bg-green-100 text-green-700",
   rejected: "bg-red-100 text-red-600",
 };
+const PAY_STYLES = {
+  paid: "bg-green-100 text-green-700", pending: "bg-amber-100 text-amber-700", failed: "bg-red-100 text-red-600",
+  cancelled: "bg-gray-200 text-gray-600", halted: "bg-red-100 text-red-600",
+};
 const PLAN_LABEL = { "": "—", free: "Free listing", basic: "Basic ₹99/mo", pro: "Pro ₹199/mo" };
 const SITE = "https://www.redheart.in";
 
@@ -95,6 +99,11 @@ const BakeryClaimsPage = () => {
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${STATUS_STYLES[status]}`}>{status}</span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">{PLAN_LABEL[c.plan || ""]}</span>
+                  {c.paymentStatus && c.paymentStatus !== "none" && (
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${PAY_STYLES[c.paymentStatus] || "bg-gray-100 text-gray-600"}`} title={c.razorpaySubscriptionId || ""}>
+                      payment: {c.paymentStatus}{c.paymentStatus === "paid" && c.paidAt ? ` · ${fmt(c.paidAt)}` : ""}
+                    </span>
+                  )}
                   <span className="text-xs text-gray-400 ml-auto">{fmt(c.createdAt)}</span>
                 </div>
                 <a href={`${SITE}/cake-shop/${c.shopCity}/${c.shopSlug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-lg font-semibold text-gray-900 hover:text-rose-600">
