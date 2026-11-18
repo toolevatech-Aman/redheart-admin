@@ -6,7 +6,9 @@ const TABS = ["pending", "approved", "rejected"];
 const TAB_STYLE = { pending: "bg-amber-100 text-amber-700", approved: "bg-green-100 text-green-700", rejected: "bg-red-100 text-red-600" };
 const SITE = "https://www.redheart.in";
 const CAT_PATH = { Flowers: "flowers", Cakes: "cakes", Plants: "plants" };
-const PAGE_SIZE = 25;
+// Each decision reloads this first page, letting the next Pending review fill
+// the completed one's place without loading a long moderation list.
+const PAGE_SIZE = 5;
 
 const fmt = (d) => {
   const date = d ? new Date(d) : null;
@@ -37,7 +39,12 @@ const ReviewsPage = () => {
     try {
       const res = await listReviews({ status: tab, q: query, page, limit: PAGE_SIZE });
       if (res.success) { setData(res); setSelected(new Set()); } else setError("Could not load reviews");
-    } catch (e) { console.error(e); setError("Something went wrong while loading reviews"); }
+    } catch (e) {
+      console.error(e);
+      if (e.response?.status === 401) setError("Your Admin session has expired. Please sign in again.");
+      else if (e.response?.status === 403) setError("Your account does not have permission to moderate reviews.");
+      else setError("Something went wrong while loading reviews");
+    }
     setLoading(false);
   }, [tab, query, page]);
   useEffect(() => { load(); }, [load]);
