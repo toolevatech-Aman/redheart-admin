@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { RefreshCw, Star, ExternalLink, Check, X, BadgeCheck, Pencil, Trash2 } from "lucide-react";
+import { RefreshCw, Star, Check, X, BadgeCheck, Pencil, Trash2 } from "lucide-react";
 import { listReviews, moderateReview, bulkModerateReviews, deleteReview, bulkDeleteReviews } from "../../service/reviews";
 
 const TABS = ["pending", "approved", "rejected"];
 const TAB_STYLE = { pending: "bg-amber-100 text-amber-700", approved: "bg-green-100 text-green-700", rejected: "bg-red-100 text-red-600" };
-const SITE = "https://www.redheart.in";
-const CAT_PATH = { Flowers: "flowers", Cakes: "cakes", Plants: "plants" };
 // Each decision reloads this first page, letting the next Pending review fill
 // the completed one's place without loading a long moderation list.
 const PAGE_SIZE = 5;
@@ -14,7 +12,6 @@ const fmt = (d) => {
   const date = d ? new Date(d) : null;
   return date && !isNaN(date) ? date.toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 };
-const productUrl = (p) => `${SITE}/p/${CAT_PATH[p.category] || "flowers"}/${p.slug}`;
 
 const Stars = ({ n }) => (
   <span className="inline-flex" aria-label={`${n} out of 5`}>
@@ -155,9 +152,7 @@ const ReviewsPage = () => {
                     <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold capitalize ${TAB_STYLE[r.status]}`}>{r.status}</span>
                     <span className="text-xs text-gray-400 ml-auto">{fmt(r.date)}</span>
                   </div>
-                  <a href={productUrl(r.product)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-rose-600">
-                    {r.product.name} · {r.product.sku} <ExternalLink className="w-3 h-3" />
-                  </a>
+                  <div className="text-xs text-gray-500">{r.product.name} · {r.product.sku}</div>
                   {editing?.id === r.id ? (
                     <div className="mt-2 space-y-2">
                       <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="Reviewer name" />
