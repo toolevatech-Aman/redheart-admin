@@ -99,6 +99,7 @@ const NAV = [
   { label: "Surprise Orders", path: "/surprise-orders" },
   { label: "Shayari Review",  path: "/shayari-review"  },
   { label: "Bakery Claims",   path: "/bakery-claims"   },
+  { label: "Product Reviews", path: "/product-reviews" },
   { label: "Shayari Orders",  path: "/subscribers"     },
   { label: "Analytics",       path: "/analytics"       },
 ];
