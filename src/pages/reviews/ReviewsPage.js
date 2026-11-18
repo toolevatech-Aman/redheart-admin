@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { RefreshCw, Star, ExternalLink, Check, X, BadgeCheck, Pencil } from "lucide-react";
-import { listReviews, moderateReview, bulkModerateReviews } from "../../service/reviews";
+import { RefreshCw, Star, ExternalLink, Check, X, BadgeCheck, Pencil, Trash2 } from "lucide-react";
+import { listReviews, moderateReview, bulkModerateReviews, deleteReview, bulkDeleteReviews } from "../../service/reviews";
 
 const TABS = ["pending", "approved", "rejected"];
 const TAB_STYLE = { pending: "bg-amber-100 text-amber-700", approved: "bg-green-100 text-green-700", rejected: "bg-red-100 text-red-600" };
@@ -48,12 +48,33 @@ const ReviewsPage = () => {
     catch (e) { console.error(e); alert("Something went wrong while updating the review"); }
     setBusy(false); load();
   };
+  const toggleVerified = async (review) => {
+    setBusy(true);
+    try { const r = await moderateReview(review.id, { verified: !review.verified }); if (!r.success) alert("Could not update verification"); }
+    catch (e) { console.error(e); alert("Something went wrong while updating verification"); }
+    setBusy(false); load();
+  };
   const bulk = async (status) => {
     if (!selected.size) return;
     if (!window.confirm(`${status === "approved" ? "Approve" : "Reject"} ${selected.size} review${selected.size === 1 ? "" : "s"}?`)) return;
     setBusy(true);
     try { const r = await bulkModerateReviews([...selected], status); if (!r.success) alert("Could not update the reviews"); }
     catch (e) { console.error(e); alert("Something went wrong while updating the reviews"); }
+    setBusy(false); load();
+  };
+  const remove = async (r) => {
+    if (!window.confirm(`Permanently delete this review by ${r.name || "Customer"}?\n\nThis cannot be undone. (Use Reject if you only want to hide it.)`)) return;
+    setBusy(true);
+    try { const res = await deleteReview(r.id); if (!res.success) alert("Could not delete the review"); }
+    catch (e) { console.error(e); alert("Something went wrong while deleting the review"); }
+    setBusy(false); load();
+  };
+  const bulkRemove = async () => {
+    if (!selected.size) return;
+    if (!window.confirm(`Permanently delete ${selected.size} review${selected.size === 1 ? "" : "s"}?\n\nThis cannot be undone. (Use Reject if you only want to hide them.)`)) return;
+    setBusy(true);
+    try { const res = await bulkDeleteReviews([...selected]); if (!res.success) alert("Could not delete the reviews"); }
+    catch (e) { console.error(e); alert("Something went wrong while deleting the reviews"); }
     setBusy(false); load();
   };
   const saveEdit = async () => {
@@ -97,6 +118,7 @@ const ReviewsPage = () => {
               <span className="text-gray-400">{selected.size} selected</span>
               {tab !== "approved" && <button disabled={busy} onClick={() => bulk("approved")} className="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg disabled:opacity-60">Approve selected</button>}
               {tab !== "rejected" && <button disabled={busy} onClick={() => bulk("rejected")} className="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg disabled:opacity-60">Reject selected</button>}
+              <button disabled={busy} onClick={bulkRemove} className="inline-flex items-center gap-1 px-3 py-1.5 border border-red-300 text-red-600 text-xs font-bold rounded-lg disabled:opacity-60"><Trash2 className="w-3.5 h-3.5" /> Delete selected</button>
             </>
           )}
         </div>
@@ -121,7 +143,7 @@ const ReviewsPage = () => {
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <Stars n={r.rating} />
                     <span className="font-semibold text-gray-900">{r.name || "Customer"}</span>
-                    {r.verifiedPurchase && <span className="inline-flex items-center gap-1 text-xs text-green-700"><BadgeCheck className="w-3.5 h-3.5" /> Verified purchase</span>}
+                    {r.verified && <span className="inline-flex items-center gap-1 text-xs text-green-700"><BadgeCheck className="w-3.5 h-3.5" /> Verified</span>}
                     {r.imported && <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600">Imported</span>}
                     <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold capitalize ${TAB_STYLE[r.status]}`}>{r.status}</span>
                     <span className="text-xs text-gray-400 ml-auto">{fmt(r.date)}</span>
@@ -148,6 +170,8 @@ const ReviewsPage = () => {
                 {r.status !== "approved" && <button disabled={busy} onClick={() => act(r.id, "approved")} className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg disabled:opacity-60"><Check className="w-3.5 h-3.5" /> Approve</button>}
                 {r.status !== "rejected" && <button disabled={busy} onClick={() => act(r.id, "rejected")} className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg disabled:opacity-60"><X className="w-3.5 h-3.5" /> Reject</button>}
                 {r.status === "approved" && <button disabled={busy} onClick={() => act(r.id, "pending")} className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-semibold rounded-lg disabled:opacity-60">Move back to pending</button>}
+                <button disabled={busy} onClick={() => toggleVerified(r)} className={`inline-flex items-center gap-1 px-3 py-1.5 border text-xs font-semibold rounded-lg disabled:opacity-60 ${r.verified ? "border-green-300 text-green-700" : "border-gray-300 text-gray-600"}`}><BadgeCheck className="w-3 h-3" /> {r.verified ? "Remove verified" : "Mark verified"}</button>
+                <button disabled={busy} onClick={() => remove(r)} className="inline-flex items-center gap-1 px-3 py-1.5 border border-red-300 text-red-600 text-xs font-semibold rounded-lg disabled:opacity-60"><Trash2 className="w-3 h-3" /> Delete</button>
                 {editing?.id !== r.id && <button onClick={() => setEditing({ id: r.id, name: r.name, comment: r.comment })} className="inline-flex items-center gap-1 px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-semibold rounded-lg"><Pencil className="w-3 h-3" /> Edit wording</button>}
               </div>
             </div>
