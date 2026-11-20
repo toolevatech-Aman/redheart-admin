@@ -66,6 +66,14 @@ const ReviewsPage = () => {
     catch (e) { console.error(e); alert("Something went wrong while updating the reviews"); }
     setBusy(false); load();
   };
+  const bulkVerify = async (verified) => {
+    if (!selected.size) return;
+    if (!window.confirm(`${verified ? "Mark" : "Remove"} Verified for ${selected.size} selected review${selected.size === 1 ? "" : "s"}?`)) return;
+    setBusy(true);
+    try { const r = await bulkModerateReviews([...selected], { verified }); if (!r.success) alert("Could not update verification"); }
+    catch (e) { console.error(e); alert("Something went wrong while updating verification"); }
+    setBusy(false); load();
+  };
   const remove = async (r) => {
     if (!window.confirm(`Permanently delete this review by ${r.name || "Customer"}?\n\nThis cannot be undone. (Use Reject if you only want to hide it.)`)) return;
     setBusy(true);
@@ -122,6 +130,8 @@ const ReviewsPage = () => {
               <span className="text-gray-400">{selected.size} selected</span>
               {tab !== "approved" && <button disabled={busy} onClick={() => bulk("approved")} className="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg disabled:opacity-60">Approve selected</button>}
               {tab !== "rejected" && <button disabled={busy} onClick={() => bulk("rejected")} className="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg disabled:opacity-60">Reject selected</button>}
+              <button disabled={busy} onClick={() => bulkVerify(true)} className="inline-flex items-center gap-1 px-3 py-1.5 border border-green-300 text-green-700 text-xs font-bold rounded-lg disabled:opacity-60"><BadgeCheck className="w-3.5 h-3.5" /> Mark verified</button>
+              <button disabled={busy} onClick={() => bulkVerify(false)} className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-bold rounded-lg disabled:opacity-60">Remove verified</button>
               <button disabled={busy} onClick={bulkRemove} className="inline-flex items-center gap-1 px-3 py-1.5 border border-red-300 text-red-600 text-xs font-bold rounded-lg disabled:opacity-60"><Trash2 className="w-3.5 h-3.5" /> Delete selected</button>
             </>
           )}
