@@ -4,9 +4,8 @@ import { listReviews, moderateReview, bulkModerateReviews, deleteReview, bulkDel
 
 const TABS = ["pending", "approved", "rejected"];
 const TAB_STYLE = { pending: "bg-amber-100 text-amber-700", approved: "bg-green-100 text-green-700", rejected: "bg-red-100 text-red-600" };
-// Each decision reloads this first page, letting the next Pending review fill
-// the completed one's place without loading a long moderation list.
-const PAGE_SIZE = 5;
+// Keep the queue manageable while allowing practical bulk moderation.
+const PAGE_SIZE = 50;
 
 const fmt = (d) => {
   const date = d ? new Date(d) : null;
