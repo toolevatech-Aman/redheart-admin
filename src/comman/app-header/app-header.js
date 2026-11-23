@@ -97,6 +97,7 @@ const NAV = [
   { label: "Users",           path: "/users"           },
   { label: "Access Control",  path: "/access-control"  },
   { label: "Surprise Orders", path: "/surprise-orders" },
+  { label: "Invitations",     path: "/invitations"     },
   { label: "Shayari Review",  path: "/shayari-review"  },
   { label: "Bakery Claims",   path: "/bakery-claims"   },
   { label: "Product Reviews", path: "/product-reviews" },

@@ -7,6 +7,7 @@ import OrderPage from "./pages/orders/order";
 import CreateOrderPage from "./pages/orders/CreateOrderPage";
 import UsersPage from "./pages/users/UsersPage";
 import SurpriseOrdersPage from "./pages/surpriseOrders/SurpriseOrdersPage";
+import InvitationsPage from "./pages/invitations/InvitationsPage";
 import ShayariReviewPage from "./pages/shayariReview/ShayariReviewPage";
 import BakeryClaimsPage from "./pages/bakeryClaims/BakeryClaimsPage";
 import ReviewsPage from "./pages/reviews/ReviewsPage";
@@ -98,6 +99,7 @@ const Router = () => {
     { path: "/users",         element: <UsersPage />,           protected: true },
     { path: "/access-control", element: <AccessControlPage />,  protected: true },
     { path: "/surprise-orders", element: <SurpriseOrdersPage />, protected: true },
+    { path: "/invitations", element: <InvitationsPage />, protected: true },
     { path: "/shayari-review",  element: <ShayariReviewPage />,  protected: true },
     { path: "/bakery-claims",   element: <BakeryClaimsPage />,   protected: true },
     { path: "/product-reviews", element: <ReviewsPage />,        protected: true },
