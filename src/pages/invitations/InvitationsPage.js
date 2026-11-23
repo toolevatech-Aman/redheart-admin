@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Search, RefreshCw, Copy, Check, ExternalLink, IndianRupee, X } from "lucide-react";
-import { fetchInvitations, fetchInvitationStats, fetchInvitation, setInvitationDisabled } from "../../service/invitationAdmin";
+import { fetchInvitations, fetchInvitationStats, fetchInvitation, fetchInvitationGuests, setInvitationDisabled } from "../../service/invitationAdmin";
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—");
@@ -33,6 +33,8 @@ const InvitationsPage = () => {
   const [error, setError] = useState("");
   const [open, setOpen] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [guestData, setGuestData] = useState(null);
+  const [guestsLoading, setGuestsLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -45,7 +47,8 @@ const InvitationsPage = () => {
 
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
 
-  const show = async (publicId) => { try { setOpen((await fetchInvitation(publicId)).invitation); } catch { setError("Could not open that invitation"); } };
+  const loadGuests = async () => { if (!open) return; setGuestsLoading(true); try { setGuestData(await fetchInvitationGuests(open.publicId)); } catch { setError("Could not load the guests"); } setGuestsLoading(false); };
+  const show = async (publicId) => { setGuestData(null); try { setOpen((await fetchInvitation(publicId)).invitation); } catch { setError("Could not open that invitation"); } };
   const toggle = async () => {
     if (!open) return;
     const disable = open.state !== "disabled";
@@ -122,6 +125,26 @@ const InvitationsPage = () => {
             <h3 className="font-medium mt-5 mb-2 flex items-center gap-1"><IndianRupee className="w-4 h-4" /> Payments ({inr(open.amountPaid)})</h3>
             {(open.payments || []).length === 0 && <p className="text-sm text-gray-500">No payment recorded.</p>}
             {(open.payments || []).map((p, i) => (<div key={i} className="text-xs border rounded p-2 mb-2"><div className="flex justify-between"><b>{inr(p.amount)}</b><span>{p.kind || "purchase"}{p.plan ? ` · ${p.plan}` : ""}</span></div><div className="text-gray-500 break-all">{p.paymentId || p.orderId}</div><div className="text-gray-500">{fmtDateTime(p.at)}</div></div>))}
+            {open.guests > 0 && (
+              <div className="mt-5">
+                <h3 className="font-medium mb-2">Guests ({open.guests})</h3>
+                {!guestData && <button disabled={guestsLoading} onClick={loadGuests} className="text-sm text-blue-600 hover:underline">{guestsLoading ? "Loading…" : "Show guest names and replies"}</button>}
+                {guestData && (
+                  <>
+                    <p className="text-xs text-gray-500 mb-2">{guestData.summary.opened} opened · {guestData.summary.replied} replied of {guestData.summary.total}</p>
+                    <div className="border rounded divide-y max-h-72 overflow-y-auto">
+                      {guestData.guests.map((g, i) => (
+                        <div key={i} className="p-2 text-xs">
+                          <div className="flex justify-between gap-2"><b>{g.name}{g.seats > 1 ? ` (${g.seats})` : ""}</b><span className={g.rsvp ? (g.rsvp === "yes" || g.rsvp === "attending" ? "text-green-700" : "text-red-600") : "text-gray-400"}>{g.rsvp ? `${g.rsvp}${g.rsvpCount ? ` · ${g.rsvpCount}` : ""}` : g.opens ? "opened" : "not opened"}</span></div>
+                          <div className="text-gray-500">{g.invitedTo}</div>
+                          {g.rsvpMessage && <div className="italic text-gray-600">“{g.rsvpMessage}”</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             {open.state !== "draft" && <button disabled={busy} onClick={toggle} className={`mt-5 w-full py-2 rounded-lg text-white text-sm ${open.state === "disabled" ? "bg-green-600" : "bg-red-600"} disabled:opacity-50`}>{open.state === "disabled" ? "Enable this invitation" : "Disable this invitation"}</button>}
           </div>
         </div>

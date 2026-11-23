@@ -6,4 +6,5 @@ export const fetchInvitations = async (params = {}) => {
 };
 export const fetchInvitationStats = async () => (await Get("/invitation-admin/stats")).data;
 export const fetchInvitation = async (publicId) => (await Get(`/invitation-admin/${encodeURIComponent(publicId)}`)).data;
+export const fetchInvitationGuests = async (publicId) => (await Get(`/invitation-admin/${encodeURIComponent(publicId)}/guests`)).data;
 export const setInvitationDisabled = async (publicId, disabled) => (await Patch(`/invitation-admin/${encodeURIComponent(publicId)}/disable`, { disabled })).data;
